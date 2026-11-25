@@ -1,0 +1,23 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# raw downloads (large; re-create with pipeline/fetch.py)
+pipeline/raw/
+pipeline/.venv/
+__pycache__/
+*.pyc
+
+# build output
+backend/target/
+frontend/node_modules/
+frontend/dist/
+tools/golden/node_modules/
+node_modules/
+
+# editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.iml

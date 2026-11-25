@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bengaluru Commute Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: practical city tool, calm and exact, like good station signage.
+   IDEA: a Namma Metro and BMTC route board laid over the city's ward map.
+   PICTURE: the live map itself: wards shaded by commute time, the three metro lines on top.
+   COLOUR and TYPE: white ground, deep ink, one blue ramp for time; metro purple, green, yellow, and bus red only for a chosen trip. Noto Sans.
+   LAYOUT: modest title, big map left, controls and results right; on phones title, map, controls, list. */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#0f1319);--ink:light-dark(#141821,#e8ebf0);--soft:light-dark(#5b6270,#a3abb8);
+--line:light-dark(#e3e6eb,#252b35);--panel:light-dark(#f6f7f9,#151a22);--land:light-dark(#eef0f3,#1b212b);
+--out:light-dark(#d9dde3,#2a313d);--ward:light-dark(#ffffff,#0f1319);--casing:light-dark(#ffffff,#0f1319);
+--b1:light-dark(#0b3d91,#a9ccff);--b2:light-dark(#2160c4,#7eacf0);--b3:light-dark(#4f88d8,#5a8ad6);
+--b4:light-dark(#86afe8,#3f69ad);--b5:light-dark(#bcd3f3,#2d4c80);--b6:light-dark(#e0eafa,#22385d);
+--acc:light-dark(#141821,#e8ebf0);--bus:light-dark(#c8372d,#ff8a7a);--focus:light-dark(#0b3d91,#a9ccff)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans",system-ui,sans-serif;overflow-x:clip}
+header{padding:20px max(3vw,16px) 14px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(24px,3vw,34px);line-height:1.08;margin:0;font-weight:700;text-wrap:balance}
+header p{margin:0;color:var(--soft);font-size:15px}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:calc(100vh - 78px);min-height:560px}
+.mapwrap{position:relative;background:var(--land);overflow:hidden;touch-action:none}
+#map{position:absolute;inset:0;width:100%;height:100%;cursor:grab;user-select:none}
+#map.placing{cursor:crosshair}
+.ward{stroke:var(--out);stroke-width:.7;vector-effect:non-scaling-stroke;fill:var(--ward);transition:fill .35s}
+.ward.sel{stroke:var(--ink);stroke-width:2.5}
+.ward:hover{stroke:var(--ink);stroke-width:1.5}
+.ml{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.dot{vector-effect:non-scaling-stroke;stroke-linecap:round}
+.slab{fill:var(--ink);paint-order:stroke;stroke:var(--casing);stroke-width:3px;stroke-linejoin:round;pointer-events:none;font-weight:600}
+.zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px}
+.zoom button,.place{width:44px;height:44px;border-radius:10px;border:1px solid var(--out);background:var(--bg);color:var(--ink);font:600 20px/1 inherit;cursor:pointer}
+.legend{position:absolute;left:12px;bottom:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - 24px)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px;border:1px solid var(--out)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 9px;border-radius:8px;font-size:13px;white-space:nowrap;display:none;z-index:3}
+.hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px;display:none}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:18px 18px 28px}
+label,.lab{display:block;font-size:13px;color:var(--soft);margin:14px 0 6px;font-weight:600}
+select,input[type=search]{width:100%;height:44px;font:16px inherit;padding:0 10px;border-radius:10px;border:1px solid var(--out);background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center}
+.row select{flex:1}
+.place{width:auto;padding:0 12px;font-size:14px;flex:none}
+.place[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input[type=range]{width:100%;height:44px;accent-color:var(--b1);margin:0}
+.val{float:right;color:var(--ink);font-weight:700}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--out);border-radius:10px;overflow:hidden}
+.seg button{height:44px;border:0;background:var(--bg);color:var(--ink);font:15px inherit;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg);font-weight:600}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.big{margin:22px 0 4px;font-size:clamp(34px,5vw,48px);font-weight:700;line-height:1}
+.sub{color:var(--soft);font-size:15px;margin:0}
+.note{font-size:14px;margin:10px 0 0;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line)}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:16px}
+.card h3{margin:0 0 2px;font-size:18px}
+.card ol{list-style:none;padding:0;margin:10px 0 0}
+.card li{padding:6px 0 6px 18px;position:relative;font-size:15px;border-top:1px solid var(--line)}
+.card li::before{content:"";position:absolute;left:2px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--c,var(--soft))}
+.chip{display:inline-block;padding:0 7px;border-radius:6px;font-size:13px;font-weight:600;color:#fff;white-space:nowrap}
+.list{margin-top:8px}
+.list button{display:flex;width:100%;justify-content:space-between;gap:10px;min-height:44px;align-items:center;padding:6px 8px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:15px inherit;text-align:left;cursor:pointer}
+.list button:hover{background:var(--bg)}
+.list b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.list small{display:block;color:var(--soft);font-size:13px}
+.empty{color:var(--soft);font-size:14px;padding:10px 0}
+footer{padding:28px max(3vw,16px) 40px;border-top:1px solid var(--line);color:var(--soft);font-size:14px;max-width:900px}
+footer h2{color:var(--ink);font-size:18px;margin:0 0 8px}
+footer a{color:var(--ink)}
+@media(max-width:900px){.app{grid-template-columns:minmax(0,1fr);height:auto}.mapwrap{height:64vh;min-height:380px}aside{border-left:0;border-top:1px solid var(--line);overflow:visible}}
+@media(prefers-reduced-motion:reduce){.ward{transition:none}}
+.trip{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;pointer-events:none}
+.bstop{vector-effect:non-scaling-stroke;stroke-linecap:round;stroke:var(--soft);pointer-events:none}
+.seg3{grid-template-columns:1fr 1fr}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--out);background:var(--bg);color:var(--ink);font:14px inherit;cursor:pointer}
+.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.nb{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+.nb td{padding:5px 0;border-top:1px solid var(--line)}
+.nb td:nth-child(2),.nb td:nth-child(3){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.nb .bar{display:block;height:6px;border-radius:3px;background:var(--line);margin-top:4px;overflow:hidden}
+.nb .bar i{display:block;height:100%;background:var(--b2)}
+.score{display:inline-block;min-width:44px;text-align:center;padding:1px 8px;border-radius:999px;background:var(--b1);color:var(--bg);font-weight:700;font-size:13px}
+.loading{font-size:13px;color:var(--soft);margin-top:6px;min-height:1em}
+</style>
+</head>
+<body>
+<header>
+  <h1>How far can you live from work in Bengaluru?</h1>
+  <p>Pick your office. See every ward you can reach by metro and bus, and what each one has nearby.</p>
+</header>
+<div class="app">
+  <div class="mapwrap" id="wrap">
+    <svg id="map" role="img" aria-label="Map of Bengaluru wards shaded by commute time by metro and bus"></svg>
+    <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">&minus;</button><button id="zreset" aria-label="Show whole city" style="font-size:13px">All</button></div>
+    <div class="legend" id="legend"></div>
+    <div class="tip" id="tip"></div>
+    <div class="hint" id="hint">Tap the map where your office is</div>
+  </div>
+  <aside>
+    <label for="office">Your office</label>
+    <div class="row"><select id="office"></select><button class="place" id="place" aria-pressed="false">Pick on map</button></div>
+    <span class="lab">Travel by</span>
+    <div class="seg" id="net"><button data-v="metro" aria-pressed="false">Metro only</button><button data-v="all" aria-pressed="true">Metro and bus</button></div>
+    <div class="loading" id="loading"></div>
+    <label for="limit">Longest commute you accept <span class="val" id="limitv"></span></label>
+    <input type="range" id="limit" min="15" max="90" step="5" value="45">
+    <span class="lab">Getting to the first stop and from the last one</span>
+    <div class="seg" id="mode"><button data-v="walk" aria-pressed="true">Walk</button><button data-v="auto" aria-pressed="false">Auto or cab</button></div>
+    <label for="leg">Longest trip to or from a stop <span class="val" id="legv"></span></label>
+    <input type="range" id="leg" min="5" max="30" step="5" value="15">
+    <span class="lab">Time of travel</span>
+    <div class="seg" id="when"><button data-v="0" aria-pressed="true">Weekday morning</button><button data-v="1" aria-pressed="false">Evening, 8 to 10 pm</button></div>
+    <label for="colour">Colour the map by</label>
+    <select id="colour">
+      <option value="time">Commute time</option>
+      <option value="score">Everyday needs score</option>
+    </select>
+    <span class="lab">Must have within 1 km</span>
+    <div class="chips" id="must"></div>
+    <div class="big" id="count">&nbsp;</div>
+    <p class="sub" id="countsub"></p>
+    <div id="stnote"></div>
+    <div id="detail"></div>
+    <span class="lab">Reachable wards</span>
+    <div class="seg" id="sort"><button data-v="time" aria-pressed="true">Quickest first</button><button data-v="score" aria-pressed="false">Best for daily needs</button></div>
+    <label for="q" class="sr" style="position:absolute;left:-9999px">Search wards</label>
+    <input type="search" id="q" placeholder="Search a ward, e.g. Indiranagar">
+    <div class="list" id="list"></div>
+  </aside>
+</div>
+<footer>
+  <h2>How the times are worked out</h2>
+  <p><b>Metro.</b> Ride times and the gap between trains come from the Namma Metro weekday timetable (BMRCL GTFS, version of 17 August 2026, from the unofficial <a href="https://github.com/Vonter/bmrcl-gtfs">bmrcl-gtfs</a> project). Waiting time is half the gap between trains at that station. Getting from the street to the platform adds 2 minutes, leaving adds 1 minute, and changing lines adds 3 minutes plus the wait. Only lines open in the timetable (Purple, Green, Yellow) are included.</p>
+  <p><b>Bus.</b> Routes, stops and ride times come from the BMTC weekday timetable (version of 9 November 2026, from the unofficial <a href="https://github.com/Vonter/bmtc-gtfs">bmtc-gtfs</a> project, built from the Namma BMTC app; it only includes routes with live tracking). The timetable assumes about 22 km/h at every hour, but news reports put real bus speeds at 10 to 12 km/h in peak traffic, so bus rides here take 1.8 times the timetable time in the morning and 1.4 times in the evening. When several routes go from your stop to the same next stop, their buses are counted together for the wait. The wait is half the gap between buses, at least 1 minute and at most 15 minutes, since riders can check live bus times in the app. Morning counts buses from 7 to 11 am, evening from 7:30 to 10 pm. Changing between buses, or between bus and metro, means walking up to 250 m between bus stops or 400 m to a metro station.</p>
+  <p><b>Getting there.</b> Walking is 4.8 km/h along a path 30% longer than a straight line. An auto or cab is 18 km/h in traffic plus 5 minutes to get one. A ward counts as reachable if you can get to its nearest part, plus a 300 m walk into it, so the far side of a large ward will take longer. Times are from your office outward; the morning trip to work is usually close to this. Office locations are approximate.</p>
+  <p><b>What's nearby.</b> Gyms, parks, hospitals and clinics, schools, grocery shops, pharmacies and places to eat come from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (data as of <span id="osmdate"></span>, © OpenStreetMap contributors). The map is built by volunteers and misses many places, especially small shops and gyms, so treat counts as a guide, not a full list. Each ward shows how many of each are inside it and how far the nearest one is from the ward centre. A ward's score for each type compares how many it has per square km with all 243 wards (100 means more than almost every other ward, 0 means none mapped). The everyday needs score is the average of the seven. "Must have within 1 km" keeps a ward if it has at least one inside, or one within 1 km of its centre.</p>
+  <p>Ward boundaries: 243 BBMP wards from <a href="https://github.com/datameet/Municipal_Spatial_Data">DataMeet Municipal Spatial Data</a>.</p>
+</footer>
+<script>
+{
+const OFFICES = [
+  ["ITPL, Whitefield", 12.9855, 77.7368],
+  ["Manyata Tech Park, Nagawara", 13.0472, 77.6205],
+  ["Embassy Tech Village, Bellandur (ORR)", 12.9298, 77.6871],
+  ["Prestige Tech Park, Kadubeesanahalli", 12.9406, 77.6967],
+  ["Bagmane Tech Park, CV Raman Nagar", 12.9806, 77.6626],
+  ["Embassy GolfLinks, Domlur", 12.9548, 77.6447],
+  ["Electronic City Phase 1", 12.8452, 77.6602],
+  ["MG Road and UB City (CBD)", 12.9716, 77.5960],
+  ["Koramangala", 12.9352, 77.6245],
+  ["HSR Layout", 12.9116, 77.6389],
+  ["Global Village Tech Park, RR Nagar", 12.9128, 77.4993]
+];
+const LAT0 = 12.97, LON0 = 77.59, COS = Math.cos(LAT0 * Math.PI / 180), K = 1000, MX = COS * 111320, MY = 110574;
+const P = (lat, lon) => [(lon - LON0) * COS * K, (LAT0 - lat) * K];
+const unP = (x, y) => [LAT0 - y / K, x / (COS * K) + LON0];
+const metres = (a, b) => Math.hypot((a[1] - b[1]) * MX, (a[0] - b[0]) * MY);
+const ENTRY = 2, EXIT = 1, CHANGE = 3, INTO = 300, WAITCAP = 15, TRAFFIC = [1.8, 1.4];
+const BUSWALK = 250, METROWALK = 400, WARDR = 1600;
+const BANDS = [20, 30, 40, 50, 60, 75, 90];
+const $ = id => document.getElementById(id);
+const svg = $("map");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const walkMin = d => d * 1.3 / 80;
+
+let D, B = null, S = {}, wardEls = [], res = [], sel = null, vb0, vb, placing = false, last = null;
+let MS = [], MSK = {}, NB = 0;   // metro states (station, line); bus stop count
+let st = {office: 0, custom: null, limit: 45, mode: "walk", leg: 15, when: 0, net: "all", colour: "time", must: [], sort: "time"};
+try { Object.assign(st, JSON.parse(localStorage.getItem("bcm3") || "{}")); } catch (e) {}
+
+const legMin = d => st.mode === "walk" ? walkMin(d) : 5 + d * 1.4 / 300;
+const officeLoc = () => st.custom || [OFFICES[st.office][1], OFFICES[st.office][2]];
+const officeName = () => st.custom ? "your chosen spot" : OFFICES[st.office][0];
+const useBus = () => st.net === "all" && B;
+function waitMin(s, L) {
+  const h = (D.hw[s] && D.hw[s][L] && D.hw[s][L][st.when]) || 600;
+  return h / 120;
+}
+function bandColor(t) {
+  if (t == null || t > st.limit) return null;
+  const i = BANDS.findIndex(b => t <= b);
+  return `var(--b${Math.min(i + 1, 6)})`;
+}
+
+// small binary heap of [cost, node]
+function Heap() { const a = []; return {
+  push(c, n) { a.push([c, n]); let i = a.length - 1; while (i) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break; [a[p], a[i]] = [a[i], a[p]]; i = p; } },
+  pop() { const top = a[0], x = a.pop(); if (a.length) { a[0] = x; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < a.length && a[l][0] < a[m][0]) m = l; if (r < a.length && a[r][0] < a[m][0]) m = r; if (m === i) break; [a[m], a[i]] = [a[i], a[m]]; i = m; } } return top; },
+  get size() { return a.length; } }; }
+
+// point to polygon distance in metres (0 inside)
+function polyDist(x, y, rings) {
+  let inside = false, best = Infinity;
+  for (const r of rings) {
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const [xi, yi] = r[i], [xj, yj] = r[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+      const dx = xj - xi, dy = yj - yi, L = dx * dx + dy * dy;
+      let t = L ? ((x - xi) * dx + (y - yi) * dy) / L : 0; t = Math.max(0, Math.min(1, t));
+      const ex = xi + t * dx - x, ey = yi + t * dy - y, d = ex * ex + ey * ey;
+      if (d < best) best = d;
+    }
+  }
+  return inside ? 0 : Math.sqrt(best);
+}
+
+function buildMetro() {
+  D.stations.forEach((s, i) => { S[s.id] = s; s.i = i; });
+  D.stations.forEach(s => s.lines.forEach(L => { MSK[s.id + "|" + L] = MS.length; MS.push({s: s.id, L, out: []}); }));
+  D.edges.forEach(([L, a, b, sec]) => MS[MSK[a + "|" + L]].out.push({to: MSK[b + "|" + L], w: sec / 60, kind: "ride"}));
+  D.stations.forEach(s => s.lines.forEach(L1 => s.lines.forEach(L2 => {
+    if (L1 !== L2) MS[MSK[s.id + "|" + L1]].out.push({to: MSK[s.id + "|" + L2], kind: "change", L: L2});
+  })));
+  D.wards.forEach(w => { w.m = w.p.map(r => r.map(([la, lo]) => [lo * MX, la * MY])); });
+}
+
+function buildBus(raw) {
+  const n = raw.n.length, lat = new Float64Array(n), lon = new Float64Array(n);
+  let a = 0, b = 0;
+  for (let i = 0; i < n; i++) { a += raw.s[2 * i]; b += raw.s[2 * i + 1]; lat[i] = a / 1e5; lon[i] = b / 1e5; }
+  const pats = raw.p.map(([label, gm, ge, ids, cs]) => {
+    const stops = new Int32Array(ids.length), cum = new Float32Array(ids.length);
+    let x = 0, c = 0;
+    ids.forEach((d, i) => { x += d; stops[i] = x; }); cs.forEach((d, i) => { c += d; cum[i] = c / 10; });
+    const nm = [...new Set(label.replace(/ \+\d+$/, "").split(" / ").map(x => x.trim().split(" ")[0]))];
+    return {label: nm.slice(0, 3).join(" / ") + (nm.length > 3 ? ` +${nm.length - 3}` : ""), f: [gm ? 1 / gm : 0, ge ? 1 / ge : 0], stops, cum};
+  });
+  const sp = Array.from({length: n}, () => []);
+  pats.forEach((p, pi) => p.stops.forEach((s, i) => { if (i < p.stops.length - 1) sp[s].push(pi, i); }));
+  // grid for neighbour search, cells about 1.1 km
+  const cell = (la, lo) => Math.floor(la / 0.01) * 100000 + Math.floor(lo / 0.01);
+  const grid = new Map();
+  for (let i = 0; i < n; i++) { const k = cell(lat[i], lon[i]); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(i); }
+  const near = (la, lo, r) => {
+    const out = [], cr = Math.ceil(r / 1100);
+    const r0 = Math.floor(la / 0.01), c0 = Math.floor(lo / 0.01);
+    for (let dr = -cr; dr <= cr; dr++) for (let dc = -cr; dc <= cr; dc++) {
+      const g = grid.get((r0 + dr) * 100000 + c0 + dc); if (!g) continue;
+      for (const i of g) { const d = metres([la, lo], [lat[i], lon[i]]); if (d <= r) out.push(i, d); }
+    }
+    return out;
+  };
+  // build walking links between bus stops (pairs: stop, metres)
+  const wl = new Array(n);
+  for (let i = 0; i < n; i++) { const nb = near(lat[i], lon[i], BUSWALK), o = []; for (let k = 0; k < nb.length; k += 2) if (nb[k] !== i) o.push(nb[k], nb[k + 1]); wl[i] = o; }
+  // metro station <-> nearby bus stops
+  const sm = Array.from({length: n}, () => []);
+  D.stations.forEach(s => { s.bus = near(s.lat, s.lon, METROWALK); for (let k = 0; k < s.bus.length; k += 2) sm[s.bus[k]].push(s.i, s.bus[k + 1]); });
+  // wards: bus stops within WARDR of each ward's edge
+  D.wards.forEach(w => {
+    const r = w.p.flat(), las = r.map(p => p[0]), los = r.map(p => p[1]);
+    const lo0 = Math.min(...los) - WARDR / MX, lo1 = Math.max(...los) + WARDR / MX, la0 = Math.min(...las) - WARDR / MY, la1 = Math.max(...las) + WARDR / MY;
+    const o = [];
+    for (let rr = Math.floor(la0 / 0.01); rr <= Math.floor(la1 / 0.01); rr++) for (let cc = Math.floor(lo0 / 0.01); cc <= Math.floor(lo1 / 0.01); cc++) {
+      const g = grid.get(rr * 100000 + cc); if (!g) continue;
+      for (const i of g) { const d = polyDist(lon[i] * MX, lat[i] * MY, w.m); if (d <= WARDR) o.push(i, Math.round(d)); }
+    }
+    w.bd = o;
+  });
+  NB = n;
+  return {n, lat, lon, names: raw.n, pats, sp, wl, sm, near};
+}
+
+function buildSvg() {
+  const pts = D.outline.flat().concat(D.stations.map(s => [s.lat, s.lon])).map(p => P(p[0], p[1]));
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), pad = 12;
+  vb0 = {x: Math.min(...xs) - pad, y: Math.min(...ys) - pad, w: Math.max(...xs) - Math.min(...xs) + 2 * pad, h: Math.max(...ys) - Math.min(...ys) + 2 * pad};
+  vb = {...vb0};
+  const pth = ring => ring.map(p => P(p[0], p[1]).map(v => v.toFixed(1)).join(",")).join("L");
+  let h = `<g id="wards">` + D.wards.map((w, i) => `<path class="ward" data-i="${i}" d="${w.p.map(r => "M" + pth(r) + "Z").join("")}"/>`).join("") + `</g><g id="bstops"></g><g id="lines">`;
+  Object.values(D.lines).forEach(l => {
+    const d = "M" + pth(l.path);
+    h += `<path class="ml" d="${d}" stroke="var(--casing)" stroke-width="7"/><path class="ml" d="${d}" stroke="${l.color}" stroke-width="4"/>`;
+  });
+  h += `</g><g id="stations">` + D.stations.map(s => {
+    const [x, y] = P(s.lat, s.lon).map(v => v.toFixed(1)), big = s.lines.length > 1, c = D.lines[s.lines[0]].color;
+    return `<path class="dot" d="M${x},${y}h0" stroke="${big ? "var(--ink)" : c}" stroke-width="${big ? 11 : 8}"/><path class="dot" d="M${x},${y}h0" stroke="var(--casing)" stroke-width="${big ? 6 : 4}"/>`;
+  }).join("") + `</g><g id="trip"></g><g id="slabs"></g><g id="omark"></g>`;
+  svg.innerHTML = h;
+  wardEls = [...svg.querySelectorAll(".ward")];
+  $("office").innerHTML = OFFICES.map((o, i) => `<option value="${i}">${esc(o[0])}</option>`).join("") + `<option value="c" hidden>Spot picked on map</option>`;
+}
+
+// Dijkstra over bus stops (0..NB-1) and metro states (NB..). Bus boarding uses all routes from a stop together.
+function route() {
+  const O = officeLoc(), lim = st.leg, LIMIT = st.limit, bus = useBus(), W = st.when;
+  const nb = bus ? NB : 0, N = nb + MS.length;
+  const dist = new Float64Array(N).fill(Infinity), prev = new Array(N), done = new Uint8Array(N), rode = new Uint8Array(N), H = Heap();
+  const relax = (v, c, pv) => { if (c < dist[v] - 1e-9 && c <= LIMIT) { dist[v] = c; prev[v] = pv; rode[v] = pv.k === "bus" || pv.k === "ride" ? 1 : pv.from != null ? rode[pv.from] : 0; H.push(c, v); } };
+  let nearest = null, nearBus = null;
+  D.stations.forEach(s => {
+    const d = metres(O, [s.lat, s.lon]), m = legMin(d);
+    if (!nearest || m < nearest.m) nearest = {s, m, d};
+    if (m <= lim) s.lines.forEach(L => { const w = ENTRY + waitMin(s.id, L); relax(nb + MSK[s.id + "|" + L], m + w, {k: "start", leg: m, wait: w}); });
+  });
+  if (bus) {
+    const R = st.mode === "walk" ? lim * 80 / 1.3 : Math.max(0, (lim - 5) * 300 / 1.4);
+    const c = B.near(O[0], O[1], Math.max(R, 1500));
+    for (let k = 0; k < c.length; k += 2) {
+      const i = c[k], m = legMin(c[k + 1]);
+      if (!nearBus || c[k + 1] < nearBus.d) nearBus = {i, d: c[k + 1], m};
+      if (m <= lim) relax(i, m, {k: "startb", leg: m});
+    }
+  }
+  const T = TRAFFIC[W];
+  while (H.size) {
+    const [d, u] = H.pop();
+    if (done[u] || d > dist[u]) continue;
+    done[u] = 1;
+    if (u < nb) {
+      const sp = B.sp[u], acc = new Map();
+      // pass 1: fastest ride to each later stop
+      for (let q = 0; q < sp.length; q += 2) {
+        const p = B.pats[sp[q]], i = sp[q + 1];
+        if (!p.f[W]) continue;
+        for (let j = i + 1; j < p.stops.length; j++) {
+          const ride = (p.cum[j] - p.cum[i]) * T;
+          if (d + ride > LIMIT) break;
+          const t = p.stops[j], e = acc.get(t);
+          if (!e) acc.set(t, {F: 0, R: 0, best: ride, p: sp[q], i, j, n: 0});
+          else if (ride < e.best) { e.best = ride; e.p = sp[q]; e.i = i; e.j = j; }
+        }
+      }
+      // pass 2: count together only routes nearly as fast as the fastest
+      for (let q = 0; q < sp.length; q += 2) {
+        const p = B.pats[sp[q]], i = sp[q + 1], f = p.f[W];
+        if (!f) continue;
+        for (let j = i + 1; j < p.stops.length; j++) {
+          const ride = (p.cum[j] - p.cum[i]) * T;
+          if (d + ride > LIMIT) break;
+          const e = acc.get(p.stops[j]);
+          if (ride <= e.best * 1.25 + 2) { e.F += f; e.R += f * ride; e.n++; if (f > (e.tf || 0)) { e.tf = f; e.p = sp[q]; e.i = i; e.j = j; } }
+        }
+      }
+      for (const [t, e] of acc) {
+        const wait = Math.min(WAITCAP, Math.max(1, 1 / (2 * e.F))), ride = e.R / e.F;
+        relax(t, d + wait + ride, {k: "bus", from: u, p: e.p, i: e.i, j: e.j, wait, ride, n: e.n});
+      }
+      const wl = B.wl[u];
+      for (let q = 0; q < wl.length; q += 2) relax(wl[q], d + walkMin(wl[q + 1]), {k: "walk", from: u, m: walkMin(wl[q + 1])});
+      const sm = B.sm[u];
+      for (let q = 0; q < sm.length; q += 2) {
+        const s = D.stations[sm[q]], m = walkMin(sm[q + 1]);
+        s.lines.forEach(L => { const w = ENTRY + waitMin(s.id, L); relax(nb + MSK[s.id + "|" + L], d + m + w, {k: "enter", from: u, m, wait: w}); });
+      }
+    } else {
+      const ms = MS[u - nb];
+      for (const e of ms.out) {
+        const w = e.kind === "ride" ? e.w : CHANGE + waitMin(ms.s, e.L);
+        relax(nb + e.to, d + w, {k: e.kind, from: u, w});
+      }
+      if (bus) {
+        const s = S[ms.s];
+        for (let q = 0; q < s.bus.length; q += 2) { const m = walkMin(s.bus[q + 1]); relax(s.bus[q], d + EXIT + m, {k: "exit", from: u, m}); }
+      }
+    }
+  }
+  // best arrival at each metro station
+  const arr = {};
+  MS.forEach((m, k) => { const c = dist[nb + k]; if (c < Infinity && rode[nb + k] && (!arr[m.s] || c < arr[m.s].t)) arr[m.s] = {t: c, node: nb + k}; });
+  res = D.wards.map((w, i) => {
+    let best = null;
+    const direct = legMin(metres(O, w.c));
+    if (direct <= lim) best = {t: direct, direct: true, last: direct};
+    for (const [si, dd] of w.sd) {
+      const a = arr[D.stations[si].id]; if (!a) continue;
+      const m = legMin(dd + INTO); if (m > lim) continue;
+      const t = a.t + EXIT + m;
+      if (!best || t < best.t) best = {t, node: a.node, last: m, metro: true};
+    }
+    if (bus) for (let q = 0; q < w.bd.length; q += 2) {
+      const c = dist[w.bd[q]]; if (c === Infinity || !rode[w.bd[q]]) continue;
+      const m = legMin(w.bd[q + 1] + INTO); if (m > lim) continue;
+      if (!best || c + m < best.t) best = {t: c + m, node: w.bd[q], last: m};
+    }
+    return best && {...best, i, t: Math.round(best.t)};
+  });
+  return {nearest, nearBus, prev, nb};
+}
+
+// turn a result into readable steps and map lines
+function steps(r) {
+  const word = st.mode === "walk" ? "Walk" : "Auto or cab", out = [], geo = [];
+  const O = officeLoc();
+  if (r.direct) return {out: [{c: "var(--soft)", h: `${word} ${Math.round(r.last)} min straight there, no bus or metro needed`}], geo, lines: []};
+  const {prev, nb} = last, chain = [];
+  for (let v = r.node; v != null; v = prev[v].from) { chain.unshift({v, p: prev[v]}); if (prev[v].k === "start" || prev[v].k === "startb") break; }
+  const name = v => v < nb ? B.names[v] + " bus stop" : S[MS[v - nb].s].n;
+  const ll = v => v < nb ? [B.lat[v], B.lon[v]] : [S[MS[v - nb].s].lat, S[MS[v - nb].s].lon];
+  const used = [];
+  let i = 0;
+  while (i < chain.length) {
+    const {v, p} = chain[i];
+    if (p.k === "start" || p.k === "startb") { out.push({c: "var(--soft)", h: `${word} ${Math.round(p.leg)} min to <b>${esc(name(v))}</b>`}); geo.push({c: "var(--soft)", dash: 1, pts: [O, ll(v)]}); }
+    if (p.k === "walk") { out.push({c: "var(--soft)", h: `Walk ${Math.round(p.m)} min to <b>${esc(name(v))}</b>`}); geo.push({c: "var(--soft)", dash: 1, pts: [ll(p.from), ll(v)]}); }
+    if (p.k === "exit") { out.push({c: "var(--soft)", h: `Leave the station and walk ${Math.round(p.m)} min to <b>${esc(name(v))}</b>`}); geo.push({c: "var(--soft)", dash: 1, pts: [ll(p.from), ll(v)]}); }
+    if (p.k === "bus") {
+      const pt = B.pats[p.p], others = p.n - 1, lbl = pt.label;
+      used.push("Bus " + lbl.split(" / ")[0]);
+      out.push({c: "var(--bus)", h: `Wait about ${Math.round(p.wait)} min, then bus <span class="chip" style="background:var(--bus)">${esc(lbl)}</span>${others > 0 ? ` or ${others} other route${others > 1 ? "s" : ""}` : ""} to <b>${esc(name(v))}</b>, ${p.j - p.i} stop${p.j - p.i > 1 ? "s" : ""}, about ${Math.round(p.ride)} min`});
+      const pts = []; for (let k = p.i; k <= p.j; k++) pts.push([B.lat[pt.stops[k]], B.lon[pt.stops[k]]]);
+      geo.push({c: "var(--bus)", pts});
+    }
+    if (p.k === "start" || p.k === "enter" || p.k === "change") {
+      const L = MS[v - nb].L, line = D.lines[L];
+      if (p.k === "enter") { out.push({c: "var(--soft)", h: `Walk ${Math.round(p.m)} min to <b>${esc(name(v))}</b>`}); geo.push({c: "var(--soft)", dash: 1, pts: [ll(p.from), ll(v)]}); }
+      let j = i + 1, mins = 0; const pts = [ll(v)];
+      while (j < chain.length && chain[j].p.k === "ride") { mins += chain[j].p.w; pts.push(ll(chain[j].v)); j++; }
+      if (j > i + 1) {
+        const w = Math.round(p.k === "change" ? p.w : p.wait), end = chain[j - 1].v;
+        const pre = p.k === "change" ? `Change at ${esc(name(v))}, about ${w} min. ` : `Enter and wait about ${w} min. `;
+        out.push({c: line.color, h: `${pre}<span class="chip" style="background:${line.color};color:${L === "YELLOW" ? "#141821" : "#fff"}">${line.name} Line</span> to <b>${esc(name(end))}</b>, ${j - i - 1} stop${j - i - 1 > 1 ? "s" : ""}, ${Math.round(mins)} min`});
+        geo.push({c: line.color, pts});
+        used.push(line.name + " Line");
+        i = j; continue;
+      }
+    }
+    i++;
+  }
+  const endTxt = r.metro ? "Leave the station, then " + word.toLowerCase() : word;
+  out.push({c: "var(--soft)", h: `${endTxt} ${Math.round(r.last)} min into the nearest part of the ward`});
+  return {out, geo, lines: [...new Set(used)]};
+}
+
+// places: scores from density compared across all wards
+function buildPlaces() {
+  const PL = D.places, N = D.wards.length;
+  PL.order.forEach((c, k) => {
+    const dens = D.wards.map(w => w.nb[k] / Math.max(w.a, 0.2));
+    D.wards.forEach((w, i) => {
+      w.sc ||= [];
+      if (!w.nb[k]) { w.sc[k] = 0; return; }
+      let lo = 0, eq = 0; for (const x of dens) { if (x < dens[i]) lo++; else if (x === dens[i]) eq++; }
+      w.sc[k] = Math.round(100 * (lo + eq / 2) / N);
+    });
+  });
+  D.wards.forEach(w => { w.score = Math.round(w.sc.reduce((a, b) => a + b, 0) / w.sc.length); });
+  $("colour").insertAdjacentHTML("beforeend", PL.order.map((c, k) => `<option value="${k}">${esc(PL.label[k])}</option>`).join(""));
+  $("must").innerHTML = PL.order.map((c, k) => `<button data-k="${k}" aria-pressed="false">${esc(PL.short[k])}</button>`).join("");
+  $("osmdate").textContent = new Date(PL.base).toLocaleDateString("en-IN", {day: "numeric", month: "long", year: "numeric"});
+}
+const hasNear = (w, k) => w.nb[k] > 0 || (w.nr[k] >= 0 && w.nr[k] <= 100);
+const passes = i => st.must.every(k => hasNear(D.wards[i], k));
+const scoreOf = (i) => st.colour === "time" || st.colour === "score" ? D.wards[i].score : D.wards[i].sc[+st.colour];
+function scoreColor(v) { return `var(--b${v >= 80 ? 1 : v >= 60 ? 2 : v >= 40 ? 3 : v >= 20 ? 4 : 5})`; }
+
+function update() {
+  try { localStorage.setItem("bcm3", JSON.stringify(st)); } catch (e) {}
+  $("limitv").textContent = st.limit + " min";
+  $("legv").textContent = st.leg + " min";
+  $("office").value = st.custom ? "c" : st.office;
+  $("colour").value = st.colour;
+  document.querySelectorAll("#must button").forEach(b => b.setAttribute("aria-pressed", st.must.includes(+b.dataset.k)));
+  for (const [id, key] of [["mode", "mode"], ["when", "when"], ["net", "net"], ["sort", "sort"]])
+    document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute("aria-pressed", b.dataset.v == st[key]));
+  $("loading").textContent = st.net === "all" && !B ? "Loading bus routes… showing metro only for now." : "";
+  last = route();
+  const ok = res.filter(r => r && r.t <= st.limit && passes(r.i)).sort((a, b) => a.t - b.t);
+  const okSet = new Set(ok.map(r => r.i));
+  wardEls.forEach((el, i) => {
+    el.style.fill = !okSet.has(i) ? "" : st.colour === "time" ? bandColor(res[i].t) : scoreColor(scoreOf(i));
+  });
+  $("count").textContent = `${ok.length} of ${D.wards.length}`;
+  const mustTxt = st.must.length ? `, with ${st.must.map(k => D.places.one[k]).join(", ").replace(/, ([^,]*)$/, " and $1")} within 1 km` : "";
+  $("countsub").textContent = `wards within ${st.limit} min of ${officeName()}${mustTxt}`;
+  const n = last.nearest, word = st.mode === "walk" ? "walk" : "auto or cab ride";
+  let note = `Closest metro station: <b>${esc(n.s.n)}</b>, ${n.m > st.leg ? `${(n.d / 1000).toFixed(1)} km away, more than your ${st.leg} min ${word} limit.` : `about ${Math.round(n.m)} min ${word}.`}`;
+  if (useBus() && last.nearBus) {
+    const nbs = last.nearBus, cnt = B.sp[nbs.i].length / 2;
+    note += `<br>Closest bus stop: <b>${esc(B.names[nbs.i])}</b>, about ${Math.max(1, Math.round(walkMin(nbs.d)))} min walk, ${cnt} route${cnt === 1 ? "" : "s"} stop there.`;
+  }
+  $("stnote").innerHTML = `<p class="note">${note}</p>`;
+  const [ox, oy] = P(...officeLoc());
+  svg.querySelector("#omark").innerHTML = `<path class="dot" d="M${ox},${oy}h0" stroke="var(--acc)" stroke-width="24" opacity=".22"/><path class="dot" d="M${ox},${oy}h0" stroke="var(--acc)" stroke-width="13"/><path class="dot" d="M${ox},${oy}h0" stroke="var(--bg)" stroke-width="5"/>`;
+  const legend = BANDS.filter((b, i) => i === 0 || BANDS[i - 1] < st.limit).map((b, i) => {
+    const lo = i === 0 ? 0 : BANDS[i - 1], hi = Math.min(b, st.limit);
+    return `<span><i style="background:var(--b${Math.min(i + 1, 6)})"></i>${i === 0 ? "under " + hi : lo + "–" + hi} min</span>`;
+  });
+  $("legend").innerHTML = st.colour === "time" ? legend.join("") + `<span><i style="background:var(--ward)"></i>${st.must.length ? "longer or missing a must-have" : "longer"}</span>`
+    : `<span><b>${esc(st.colour === "score" ? "Everyday needs score" : D.places.label[+st.colour])}</b></span>` + [[80, 1, "80+"], [60, 2, "60–79"], [40, 3, "40–59"], [20, 4, "20–39"], [0, 5, "under 20"]].map(([, b, t]) => `<span><i style="background:var(--b${b})"></i>${t}</span>`).join("") + `<span><i style="background:var(--ward)"></i>not in reach</span>`;
+  renderList(ok);
+  renderDetail();
+}
+
+function renderList(ok) {
+  ok ||= res.filter(r => r && r.t <= st.limit && passes(r.i)).sort((a, b) => a.t - b.t);
+  if (st.sort === "score") ok = [...ok].sort((a, b) => scoreOf(b.i) - scoreOf(a.i) || a.t - b.t);
+  const q = $("q").value.trim().toLowerCase();
+  const rows = ok.filter(r => !q || D.wards[r.i].n.toLowerCase().includes(q)).slice(0, 250);
+  $("list").innerHTML = rows.length ? rows.map(r => {
+    const how = r.direct ? "No bus or metro needed" : (steps(r).lines.join(" + ") || "Walk");
+    const sv = scoreOf(r.i), sl = st.colour === "time" || st.colour === "score" ? "needs score" : D.places.short[+st.colour].toLowerCase() + " score";
+    return `<button data-i="${r.i}"><span>${esc(D.wards[r.i].n)}<small>${esc(how)} · ${sl} ${sv}</small></span><b>${r.t} min</b></button>`;
+  }).join("") : `<p class="empty">${q ? "No reachable ward matches that name." : st.must.length ? "No ward fits these limits and must-haves. Try fewer must-haves or a longer commute." : "No ward fits these limits. Try a longer commute, a longer trip to the stop, or add buses."}</p>`;
+}
+
+function renderDetail() {
+  wardEls.forEach(el => el.classList.remove("sel"));
+  const tg = svg.querySelector("#trip");
+  if (sel == null) { $("detail").innerHTML = ""; tg.innerHTML = ""; return; }
+  wardEls[sel].classList.add("sel");
+  wardEls[sel].parentNode.appendChild(wardEls[sel]);
+  const w = D.wards[sel], r = res[sel];
+  const nb = `<p class="sub" style="margin-top:12px">Everyday needs score <span class="score">${w.score}</span></p><table class="nb"><tbody>${D.places.order.map((c, k) => `<tr><td>${esc(D.places.label[k])}<span class="bar"><i style="width:${w.sc[k]}%"></i></span></td><td>${w.nb[k]} inside</td><td>${w.nr[k] < 0 ? "none" : w.nr[k] < 100 ? "nearest " + (w.nr[k] * 10) + " m" : "nearest " + (w.nr[k] / 100).toFixed(1) + " km"}</td></tr>`).join("")}</tbody></table><p class="sub" style="font-size:13px;margin-top:8px">From OpenStreetMap, which misses many places, especially gyms and small shops.</p>`;
+  if (!r) { tg.innerHTML = ""; $("detail").innerHTML = `<div class="card"><h3>${esc(w.n)}</h3><p class="sub">Not reachable with these limits: no stop is close enough on a trip that fits your time.</p>${nb}</div>`; return; }
+  const over = r.t > st.limit ? ` That is over your ${st.limit} min limit.` : "", s = steps(r);
+  tg.innerHTML = s.geo.map(g => {
+    const d = "M" + g.pts.map(p => P(p[0], p[1]).map(v => v.toFixed(1)).join(",")).join("L");
+    return g.dash ? `<path class="trip" d="${d}" stroke="var(--ink)" stroke-width="2.5" stroke-dasharray="2 5"/>` : `<path class="trip" d="${d}" stroke="var(--casing)" stroke-width="9"/><path class="trip" d="${d}" stroke="${g.c}" stroke-width="5"/>`;
+  }).join("");
+  $("detail").innerHTML = `<div class="card"><h3>${esc(w.n)}</h3><p class="sub">About <b>${r.t} min</b> from ${esc(officeName())}.${over}</p><ol>${s.out.map(l => `<li style="--c:${l.c}">${l.h}</li>`).join("")}</ol>${nb}</div>`;
+}
+
+function setVB() {
+  svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  const m = svg.getScreenCTM(); if (!m || !D) return;
+  const k = 1 / m.a, inView = (x, y) => x > vb.x && x < vb.x + vb.w && y > vb.y && y < vb.y + vb.h;
+  svg.querySelector("#slabs").innerHTML = vb.w < vb0.w / 2.4 ? D.stations.map(s => { const [x, y] = P(s.lat, s.lon); return inView(x, y) ? `<text class="slab" x="${x + 8 * k}" y="${y + 4 * k}" font-size="${12 * k}">${esc(s.n.replace("Nadaprabhu Kempegowda Station, ", ""))}</text>` : ""; }).join("") : "";
+  let bs = "";
+  if (B && useBus() && vb.w < vb0.w / 5) {
+    let c = 0;
+    for (let i = 0; i < B.n && c < 2500; i++) { const [x, y] = P(B.lat[i], B.lon[i]); if (inView(x, y)) { bs += `M${x.toFixed(2)},${y.toFixed(2)}h0`; c++; } }
+  }
+  svg.querySelector("#bstops").innerHTML = bs ? `<path class="bstop" d="${bs}" stroke-width="4" opacity=".55"/>` : "";
+}
+function toUser(cx, cy) { const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+function zoomAt(f, ux, uy) {
+  const w = Math.min(Math.max(vb.w * f, vb0.w / 20), vb0.w * 1.3), r = w / vb.w;
+  vb = {x: ux - (ux - vb.x) * r, y: uy - (uy - vb.y) * r, w, h: vb.h * r};
+  setVB();
+}
+const zoomCenter = f => zoomAt(f, vb.x + vb.w / 2, vb.y + vb.h / 2);
+function focusWard(i) {
+  const [x, y] = P(...D.wards[i].c), w = Math.min(vb.w, vb0.w / 3), r = w / vb.w;
+  vb = {x: x - w / 2, y: y - vb.h * r / 2, w, h: vb.h * r};
+  setVB();
+}
+
+// map events: drag, pinch, wheel, tap
+const ptrs = new Map();
+let drag = null, pinch = null;
+svg.addEventListener("pointerdown", e => {
+  svg.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (ptrs.size === 1) drag = {x: e.clientX, y: e.clientY, vb: {...vb}, moved: 0, target: e.target};
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = {d: Math.hypot(a.x - b.x, a.y - b.y)}; drag = null; }
+});
+svg.addEventListener("pointermove", e => {
+  if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (pinch && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), u = toUser((a.x + b.x) / 2, (a.y + b.y) / 2);
+    zoomAt(pinch.d / d, u.x, u.y); pinch.d = d; return;
+  }
+  if (drag) {
+    const m = svg.getScreenCTM(), dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+    if (drag.moved > 4) { vb = {...drag.vb, x: drag.vb.x - dx / m.a, y: drag.vb.y - dy / m.d}; setVB(); $("tip").style.display = "none"; }
+    return;
+  }
+  const t = e.target, tip = $("tip");
+  if (t.classList && t.classList.contains("ward") && e.pointerType === "mouse") {
+    const i = +t.dataset.i, r = res[i], box = $("wrap").getBoundingClientRect();
+    tip.innerHTML = `<b>${esc(D.wards[i].n)}</b> · ${r ? r.t + " min" : "not reachable"}`;
+    tip.style.display = "block";
+    tip.style.left = Math.min(e.clientX - box.left + 14, box.width - tip.offsetWidth - 8) + "px";
+    tip.style.top = (e.clientY - box.top + 14) + "px";
+  } else tip.style.display = "none";
+});
+function end(e) {
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) pinch = null;
+  if (drag && drag.moved <= 4 && e.type === "pointerup") {
+    if (placing) { const u = toUser(e.clientX, e.clientY); st.custom = unP(u.x, u.y).map(v => +v.toFixed(5)); setPlacing(false); update(); }
+    else if (drag.target.classList.contains("ward")) { sel = +drag.target.dataset.i; renderDetail(); }
+  }
+  drag = null;
+}
+svg.addEventListener("pointerup", end);
+svg.addEventListener("pointercancel", end);
+svg.addEventListener("pointerleave", () => $("tip").style.display = "none");
+svg.addEventListener("wheel", e => { e.preventDefault(); const u = toUser(e.clientX, e.clientY); zoomAt(Math.exp(e.deltaY * 0.0015), u.x, u.y); }, {passive: false});
+$("zin").onclick = () => zoomCenter(0.7);
+$("zout").onclick = () => zoomCenter(1 / 0.7);
+$("zreset").onclick = () => { vb = {...vb0}; setVB(); };
+function setPlacing(on) { placing = on; $("place").setAttribute("aria-pressed", on); svg.classList.toggle("placing", on); $("hint").style.display = on ? "block" : "none"; }
+$("place").onclick = () => setPlacing(!placing);
+$("office").onchange = e => { if (e.target.value !== "c") { st.office = +e.target.value; st.custom = null; } update(); };
+$("limit").oninput = e => { st.limit = +e.target.value; update(); };
+$("leg").oninput = e => { st.leg = +e.target.value; update(); };
+const seg = (id, key, num) => $(id).onclick = e => { const b = e.target.closest("button"); if (b) { st[key] = num ? +b.dataset.v : b.dataset.v; update(); setVB(); } };
+seg("mode", "mode"); seg("when", "when", true); seg("net", "net"); seg("sort", "sort");
+$("colour").onchange = e => { st.colour = e.target.value; update(); };
+$("must").onclick = e => { const b = e.target.closest("button"); if (!b) return; const k = +b.dataset.k; st.must = st.must.includes(k) ? st.must.filter(x => x !== k) : [...st.must, k]; update(); };
+$("q").oninput = () => renderList();
+$("list").onclick = e => { const b = e.target.closest("button"); if (b) { sel = +b.dataset.i; renderDetail(); focusWard(sel); } };
+new ResizeObserver(() => D && setVB()).observe(svg);
+
+fetch("data.json").then(r => r.json()).then(d => {
+  D = d; buildMetro(); buildSvg(); buildPlaces();
+  if (!["time", "score"].includes(st.colour) && !(+st.colour < D.places.order.length)) st.colour = "time";
+  st.must = (st.must || []).filter(k => k < D.places.order.length);
+  if (st.office >= OFFICES.length) st.office = 0;
+  $("limit").value = st.limit; $("leg").value = st.leg;
+  setVB(); update();
+  return fetch("bus.json").then(r => r.json()).then(raw => {
+    const t0 = performance.now();
+    B = buildBus(raw);
+    window.__buildMs = performance.now() - t0;
+    update(); setVB();
+  }).catch(() => { $("loading").textContent = "Bus routes did not load, so only the metro is shown. Reload to try again."; });
+}).catch(() => { $("count").textContent = "Map data did not load"; $("countsub").textContent = "Please reload the page."; });
+}
+</script>
+</body>
+</html>

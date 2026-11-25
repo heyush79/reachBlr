@@ -1,0 +1,4 @@
+shapely==2.1.*
+pandas==2.3.*
+numpy==2.*
+requests==2.32.*
