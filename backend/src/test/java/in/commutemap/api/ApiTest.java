@@ -135,8 +135,8 @@ class ApiTest {
 
     @Test
     void browsersFromTheFrontendMayCall() throws Exception {
-        mvc.perform(get("/api/meta").header("Origin", "http://localhost:5173"))
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+        mvc.perform(get("/api/meta").header("Origin", "http://localhost:5180"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5180"));
         mvc.perform(get("/api/meta").header("Origin", "https://evil.example"))
                 .andExpect(status().isForbidden());
     }

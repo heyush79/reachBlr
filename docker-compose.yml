@@ -1,6 +1,7 @@
 # Run everything locally with one command:  docker compose up --build
-# Then open http://localhost:8080
-# Port 8080 taken? Pick another:  APP_PORT=8090 docker compose up --build   (or put APP_PORT=8090 in .env)
+# Then open http://localhost:8090
+# Port 8090 taken? Pick another:  APP_PORT=8095 docker compose up --build   (or put APP_PORT=8095 in .env)
+# The backend listens on 8080 inside Docker only; it is not opened on your machine.
 # Optional: put GOOGLE_PLACES_API_KEY (and the rate limits) in .env to turn on "Nearby on Google".
 services:
   backend:
@@ -11,14 +12,14 @@ services:
       - path: .env
         required: false
     environment:
-      ALLOWED_ORIGINS: http://localhost:${APP_PORT:-8080}
+      ALLOWED_ORIGINS: http://localhost:${APP_PORT:-8090}
     restart: unless-stopped
 
   frontend:
     build:
       context: frontend
     ports:
-      - "${APP_PORT:-8080}:80"
+      - "${APP_PORT:-8090}:80"
     depends_on:
       - backend
     restart: unless-stopped

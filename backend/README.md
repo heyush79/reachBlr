@@ -8,7 +8,8 @@ It answers commute searches with Dijkstra's shortest-path search; a 90-minute se
 You need Java 21 or newer. The Maven wrapper downloads Maven itself.
 
 ```bash
-./mvnw spring-boot:run          # http://localhost:8080
+./mvnw spring-boot:run          # http://localhost:8081 (another port: PORT=8085 ./mvnw spring-boot:run)
+curl "http://localhost:8081/api/reach?lat=12.9855&lon=77.7368"   # ITPL: "reachable": 22
 ./mvnw test                     # all tests
 ```
 
@@ -85,11 +86,11 @@ All settings are in `src/main/resources/application.yml`. Each can be set with a
 | Variable | Meaning | Default |
 |---|---|---|
 | `COMMUTE_DATA_DIR` | folder with the prepared data | `../data` |
-| `ALLOWED_ORIGINS` | browser origins allowed to call the API from another site (CORS) | `http://localhost:5173,http://localhost:8080` |
+| `ALLOWED_ORIGINS` | browser origins allowed to call the API from another site (CORS) | `http://localhost:5180,http://localhost:8090` |
 | `GOOGLE_PLACES_API_KEY` | Google Places API (New) key. Empty turns "Nearby on Google" off | empty |
 | `PLACES_PER_IP_PER_MINUTE`, `PLACES_GLOBAL_PER_DAY` | rate limits for `/api/places/nearby` | `10`, `500` |
 | `RIDE_FIX` | `true` keeps two times at every stop, "no ride yet" and "has ridden", so trips that leave from a stop you could have walked to are not lost. `false` matches the prototype exactly | `false` |
-| `PORT` | HTTP port | `8080` |
+| `PORT` | HTTP port | `8081` for local development; `8080` inside Docker (set in its Dockerfile); hosting platforms set their own |
 
 ## Code map
 

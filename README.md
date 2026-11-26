@@ -94,30 +94,46 @@ There's an optional improvement, `RIDE_FIX=true`, which is off by default so res
 
 ## Run it
 
+You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) for the one-command way; for development,
+Java 21+ and Node 22+.
+
+**Ports**
+
+| What | Address | Change it with |
+|---|---|---|
+| The app in Docker (frontend, with `/api` forwarded to the backend) | <http://localhost:8090> | `APP_PORT` |
+| The backend inside Docker | port 8080, private to Docker (not opened on your machine) | — |
+| The backend in development | <http://localhost:8081> | `PORT` |
+| The frontend in development | <http://localhost:5180> | `--port`, plus `BACKEND_URL` if the backend moved |
+
 **With Docker (one command).** Docker Desktop must be running first:
 
 ```bash
 docker desktop start                        # or open the Docker app; wait until this works:
 docker info --format '{{.ServerVersion}}'   # prints a version when the engine is ready
-docker compose up --build                   # then open http://localhost:8080
+docker compose up --build                   # then open http://localhost:8090
 ```
 
-- **Port 8080 taken?** Run `APP_PORT=8090 docker compose up --build` and open <http://localhost:8090>, or put
-  `APP_PORT=8090` in `.env`.
+- **Port 8090 taken?** Run `APP_PORT=8095 docker compose up --build` and open <http://localhost:8095>, or put
+  `APP_PORT=8095` in `.env`.
 - **Stop it** with `docker compose down`.
 - **Errors like `500 Internal Server Error ... docker.sock/_ping`, or `docker ps` hanging?** The Docker engine isn't ready
   or is stuck. Check with `docker desktop status`, then run `docker desktop restart`. If that reports processes still
   running, run `docker desktop stop --force` and then `docker desktop start`.
 
-**For development**, in two terminals (Java 21+, Node 22+):
+**For development**, in two terminals:
 
 ```bash
-cd backend && ./mvnw spring-boot:run             # API on http://localhost:8080
-cd frontend && npm install && npm run dev        # app on http://localhost:5173
+cd backend && ./mvnw spring-boot:run             # API on http://localhost:8081
+cd frontend && npm install && npm run dev        # app on http://localhost:5180 (forwards /api to the backend)
 ```
 
-If 8080 is taken, use `PORT=8081 ./mvnw spring-boot:run` and `BACKEND_URL=http://localhost:8081 npm run dev`.
-If 5173 is taken, add `-- --port 5180` to `npm run dev`.
+Check the API with `curl "http://localhost:8081/api/reach?lat=12.9855&lon=77.7368"`. It should report `"reachable": 22`
+(ITPL, 45 minutes, walking, metro and bus).
+
+**Other ports for development:** run `PORT=8085 ./mvnw spring-boot:run`, then
+`BACKEND_URL=http://localhost:8085 npm run dev -- --port 5190`. If 5180 is busy, Vite picks the next free port by itself
+and prints it.
 
 **Nearby places from Google** are optional:
 

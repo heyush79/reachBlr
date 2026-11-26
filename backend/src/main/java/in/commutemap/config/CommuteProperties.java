@@ -21,7 +21,7 @@ import java.util.List;
 @ConfigurationProperties("commute")
 public record CommuteProperties(
         @DefaultValue("../data") String dataDir,
-        @DefaultValue("http://localhost:5173") List<String> allowedOrigins,
+        @DefaultValue("http://localhost:5180") List<String> allowedOrigins,
         List<Office> offices,
         @DefaultValue("32") int searchCacheSize,
         @DefaultValue("false") boolean rideFix) {

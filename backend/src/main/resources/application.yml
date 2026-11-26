@@ -8,7 +8,8 @@ spring:
     default-property-inclusion: always
 
 server:
-  port: ${PORT:8080}
+  # 8081 for local development (8080 is often taken); Docker and hosting platforms set PORT
+  port: ${PORT:8081}
   # trust X-Forwarded-* headers from the reverse proxy (nginx / the hosting platform)
   forward-headers-strategy: framework
   compression:
@@ -28,7 +29,7 @@ management:
 
 commute:
   data-dir: ${COMMUTE_DATA_DIR:../data}
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5180,http://localhost:8090}
   search-cache-size: 32
   google:
     # From the environment only; never commit a key. Empty = the "Nearby on Google" feature is off.

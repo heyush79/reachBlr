@@ -8,14 +8,14 @@ Start the backend first (`cd ../backend && ./mvnw spring-boot:run`), then:
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173 (the dev server forwards /api to localhost:8080)
+npm run dev        # http://localhost:5180 (the dev server forwards /api to the backend on localhost:8081)
 npm test           # unit tests (Vitest)
 npm run lint
 npm run build      # type check + production build into dist/
 ```
 
-If port 5173 is taken, use `npm run dev -- --port 5180`. If the backend runs on another port, tell the dev server where
-it is: `BACKEND_URL=http://localhost:8081 npm run dev`.
+If port 5180 is taken, Vite uses the next free port and prints it. If the backend runs on another port, tell the dev
+server where it is: `BACKEND_URL=http://localhost:8085 npm run dev`.
 
 `VITE_API_BASE` sets the backend's address when it lives on another site, e.g.
 `VITE_API_BASE=https://api.example.com npm run build`. Left empty, the app calls `/api` on its own site.
