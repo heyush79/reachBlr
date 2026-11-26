@@ -25,19 +25,20 @@ import java.util.List;
  * <p>A line-by-line port of {@code route()} in the prototype (reference/.../prototype/index.html):
  * the golden test checks that both give the same minutes for every ward.
  *
- * <p><b>Ride fix</b> (off by default, to match the prototype). A trip only counts for a ward if it
- * includes a bus or metro ride. The prototype keeps one best time per stop, so if a stop is reached
- * fastest by walking alone, a slightly slower way there that includes a ride is lost, and wards that
- * need it can be missed. With the fix, each node exists twice, "no ride yet" and "has ridden", so both
- * are kept.
+ * <p><b>Ride fix</b> (on by default). A trip only counts for a ward if it includes a bus or metro ride.
+ * The prototype keeps one best time per stop, so if a stop is reached fastest by walking alone, a slightly
+ * slower way there that includes a ride is lost, and wards that need it can be missed. With the fix, each
+ * node exists twice, "no ride yet" and "has ridden", so both are kept. It never makes a ward slower.
+ * {@code new Router(graph, false)} is the prototype's behaviour, used by the tests that compare with it.
  */
 public final class Router {
 
     private final TransitGraph g;
     private final boolean rideFix;
 
+    /** With the ride fix (the app's default). */
     public Router(TransitGraph graph) {
-        this(graph, false);
+        this(graph, true);
     }
 
     public Router(TransitGraph graph, boolean rideFix) {
@@ -166,7 +167,8 @@ public final class Router {
                     int i = c.stop(k);
                     double d = c.metres(k), m = access.minutes(d);
                     if (nearBus == null || d < nearBus.metres()) {
-                        nearBus = new NearestBusStop(i, g.stopName[i], d, m, g.stopPatterns[i].length / 2);
+                        nearBus = new NearestBusStop(i, g.stopName[i], d, m, g.stopRouteNumbers[i],
+                                g.stopPatterns[i].length / 2);
                     }
                     if (m <= lim) relax(i, m, Kind.START_BUS, -1, -1, -1, -1, 0, m, 0);
                 }

@@ -89,7 +89,7 @@ All settings are in `src/main/resources/application.yml`. Each can be set with a
 | `ALLOWED_ORIGINS` | browser origins allowed to call the API from another site (CORS) | `http://localhost:5180,http://localhost:8090` |
 | `GOOGLE_PLACES_API_KEY` | Google Places API (New) key. Empty turns "Nearby on Google" off | empty |
 | `PLACES_PER_IP_PER_MINUTE`, `PLACES_GLOBAL_PER_DAY` | rate limits for `/api/places/nearby` | `10`, `500` |
-| `RIDE_FIX` | `true` keeps two times at every stop, "no ride yet" and "has ridden", so trips that leave from a stop you could have walked to are not lost. `false` matches the prototype exactly | `false` |
+| `RIDE_FIX` | `true` keeps two times at every stop, "no ride yet" and "has ridden", so trips that leave from a stop you could have walked to are not lost. `false` matches the prototype exactly | `true` |
 | `PORT` | HTTP port | `8081` for local development; `8080` inside Docker (set in its Dockerfile); hosting platforms set their own |
 
 ## Code map
@@ -110,7 +110,7 @@ All settings are in `src/main/resources/application.yml`. Each can be set with a
 | `GoldenParityTest` | the same answers as the prototype's JavaScript, ward by ward and step by step, for 12 searches (see `tools/golden`) |
 | `KnownCasesTest` | the checks from the prototype's notes: ITPL 45 min walking reaches 17 wards by metro and 22 with buses; MG Road reaches 50 and 86; Pattandur Agrahara → Indiranagar is a 27 min metro ride; Manyatha Tech Park → Kalyananagara is about 13 min by bus |
 | `RulesTest` | each travel-time rule on a tiny made-up network |
-| `RideFixTest` | the optional fix finds missed wards and never makes a ward slower |
+| `RideFixTest` | the ride fix (on by default) finds missed wards and never makes a ward slower |
 | `SpeedTest` | a 90 min search answers in under 300 ms |
 | `ApiTest` | the endpoints, input checks, caching headers and CORS |
 | `NearbyPlacesTest` | the Google proxy against a fake Google server: request, field mask, answer shape, per-visitor limit, errors, the key never leaking |

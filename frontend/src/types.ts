@@ -101,7 +101,8 @@ export interface Step {
   to?: string;
   stops?: number;
   line?: { id: string; name: string; color: string };
-  bus?: { label: string; otherRoutes: number };
+  /** otherRoutes: how many more route numbers were counted together for the wait; otherRouteNumbers lists them */
+  bus?: { label: string; otherRoutes: number; otherRouteNumbers?: string[] };
   path: LatLon[];
 }
 

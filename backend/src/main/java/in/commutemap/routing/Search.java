@@ -1,6 +1,6 @@
 package in.commutemap.routing;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * The result of one search: the fastest time to every graph node, how each node was reached
@@ -163,6 +163,47 @@ public final class Search {
 
     public record NearestStation(int station, String name, double minutes, double metres) {}
 
-    /** {@code patternsStopping}: how many route patterns stop there (what the prototype called "routes"). */
-    public record NearestBusStop(int stop, String name, double metres, double minutes, int patternsStopping) {}
+    /**
+     * {@code routeNumbers}: how many distinct route numbers stop there. {@code patternsStopping}: how many route
+     * patterns (variants) stop there, which is what the prototype showed as "routes".
+     */
+    public record NearestBusStop(int stop, String name, double metres, double minutes, int routeNumbers,
+                                 int patternsStopping) {}
+
+    /** The bus shown for a ride ({@code label}) and the other route numbers counted together with it. */
+    public record BusRoutes(String label, List<String> others) {}
+
+    /**
+     * For a bus ride into node {@code v}: every route number whose buses were counted together for the wait
+     * (the same rule as the search: at most 1.25 x the fastest ride + 2 min), minus those already in the label.
+     */
+    public BusRoutes busRoutes(int v) {
+        int u = prevFrom[v], lu = u % base, t = v % base, when = query.when().ordinal();
+        double d = dist[u], traffic = Geo.TRAFFIC[when];
+        int[] sp = graph.stopPatterns[lu];
+        double best = Double.POSITIVE_INFINITY;
+        for (int pass = 0; pass < 2; pass++) {
+            Set<String> numbers = new TreeSet<>();
+            for (int q = 0; q < sp.length; q += 2) {
+                int pi = sp[q], i = sp[q + 1];
+                if (graph.patFreq[pi][when] == 0) continue;
+                int[] stops = graph.patStops[pi];
+                float[] cum = graph.patCum[pi];
+                for (int j = i + 1; j < stops.length; j++) {
+                    double ride = ((double) cum[j] - (double) cum[i]) * traffic;
+                    if (d + ride > query.limit()) break;
+                    if (stops[j] != t) continue;
+                    if (pass == 0) best = Math.min(best, ride);
+                    else if (ride <= best * 1.25 + 2) numbers.addAll(Arrays.asList(graph.patRouteNumbers[pi]));
+                }
+            }
+            if (pass == 1) {
+                String label = graph.patLabel[prevPattern[v]];
+                Set<String> shown = new HashSet<>(Arrays.asList(label.split(" / ")));
+                numbers.removeAll(shown);
+                return new BusRoutes(label, List.copyOf(numbers));
+            }
+        }
+        throw new IllegalStateException("unreachable");
+    }
 }

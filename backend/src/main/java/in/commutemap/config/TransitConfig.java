@@ -44,7 +44,7 @@ public class TransitConfig {
 
     @Bean
     Router router(TransitGraph graph, CommuteProperties props) {
-        log.info("Ride fix is {}", props.rideFix() ? "on" : "off (results match the prototype)");
+        log.info("Ride fix is {}", props.rideFix() ? "on" : "off (results match the prototype exactly)");
         return new Router(graph, props.rideFix());
     }
 

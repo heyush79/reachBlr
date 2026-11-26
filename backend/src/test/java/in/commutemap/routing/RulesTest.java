@@ -18,7 +18,9 @@ class RulesTest {
 
     private static final double EPS = 1e-9;
     private static final TransitGraph G = new TransitGraph(TinyNetwork.build());
-    private static final Router ROUTER = new Router(G);
+    // The rules are the same with or without the ride fix. Prototype mode keeps one node per stop,
+    // so the hand-worked node numbers (s.dist[Y] and so on) apply directly.
+    private static final Router ROUTER = new Router(G, false);
 
     private static Search fromX(int limit, TimeOfDay when) {
         return ROUTER.search(new SearchQuery(12.95, 77.60, limit, Access.WALK, 15, when, Network.ALL));

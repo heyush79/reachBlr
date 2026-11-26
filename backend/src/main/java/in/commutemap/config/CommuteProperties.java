@@ -16,7 +16,7 @@ import java.util.List;
  * @param offices        the preset offices shown in the app
  * @param searchCacheSize how many recent searches to keep, so a trip request right after a search is instant
  * @param rideFix        keep "no ride yet" and "has ridden" times apart at every stop (see {@link in.commutemap.routing.Router});
- *                       off by default so results match the prototype
+ *                       on by default; false gives the prototype's exact results
  */
 @ConfigurationProperties("commute")
 public record CommuteProperties(
@@ -24,7 +24,7 @@ public record CommuteProperties(
         @DefaultValue("http://localhost:5180") List<String> allowedOrigins,
         List<Office> offices,
         @DefaultValue("32") int searchCacheSize,
-        @DefaultValue("false") boolean rideFix) {
+        @DefaultValue("true") boolean rideFix) {
 
     public record Office(String name, double lat, double lon) {}
 

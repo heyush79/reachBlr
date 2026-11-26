@@ -85,12 +85,24 @@ both give exactly the same minutes, lines and step wording for all 243 wards, ov
 | Pattandur Agrahara → Indiranagar, Purple Line | 27 min |
 | Manyatha Tech Park → Kalyananagara by bus, morning | about 13 min |
 
-There's an optional improvement, `RIDE_FIX=true`, which is off by default so results match the prototype:
+One improvement on the prototype is switched on, the **ride fix**:
 
 - The prototype keeps one best time per stop. So when a stop is reached fastest on foot, a slightly slower way there that
   includes a ride is lost, and wards that need it can be missed.
 - The fix keeps both times. It never makes a ward slower, leaves the counts above unchanged, and makes some wards
   1–10 minutes quicker, mostly when going by auto.
+- `RIDE_FIX=false` gives the prototype's exact results. The prototype comparison tests run that way.
+
+Three smaller differences from the prototype, all on purpose:
+
+- **"or N other routes"** after a bus counts distinct route *numbers* (500-D, 335-E…), not route variants (one number
+  can have several sets of stops). The same goes for "N routes stop there". Hover over the bus chip to see the numbers.
+- **Big parks count.** Places drawn on OpenStreetMap as several pieces ("relations"), such as many lake parks, are now
+  counted. That adds 58 parks inside wards, plus 11 schools and 7 hospitals or clinics.
+- **"Nearest" is measured from inside the ward.** The prototype measured from the ward's centroid (geometric centre),
+  which falls outside 9 oddly shaped wards. Those now use a point inside the ward; every other ward is unchanged.
+
+`python pipeline/build_places.py --like-prototype` rebuilds the place data the prototype's way.
 
 ## Run it
 
@@ -186,14 +198,8 @@ The files in `data/` are derived from ODbL and CC BY sources and keep those lice
   Walking distances are straight lines × 1.3.
 - **Missing places.** OpenStreetMap is built by volunteers and misses many places, especially gyms and small shops: 139
   of 243 wards have no gym mapped. Scores compare wards with each other, so treat counts as a guide.
-  - Like the prototype, places mapped as several pieces (OpenStreetMap "relations") aren't counted, which leaves out
-    about 70 big lake parks.
-  - The "nearest" distance is measured from the ward's centroid (its geometric centre), which falls outside 9 oddly
-    shaped wards.
 - **Old ward map.** These are the 243 BBMP wards. Bengaluru has since moved to the Greater Bengaluru Authority with new
   wards.
-- **Bus wording.** "or 96 other routes" counts route *patterns* (variants of a route), not distinct route numbers, as in
-  the prototype.
 - **Hosting.** The OpenFreeMap tile service is free with no uptime promise. The Google proxy's per-visitor limit goes by
   IP address, which a determined user could fake, but the site-wide daily cap still holds.
 

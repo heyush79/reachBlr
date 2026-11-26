@@ -17,14 +17,30 @@ import static org.junit.jupiter.api.Assertions.*;
 class KnownCasesTest {
 
     private static final TransitGraph G = TestGraph.get();
-    private static final Router ROUTER = new Router(G);
+    /** Prototype mode (ride fix off), where these numbers were recorded. */
+    private static final Router ROUTER = new Router(G, false);
+    /** The app's default: the ride fix on. */
+    private static final Router FIXED = new Router(G, true);
 
     private static final double[] ITPL = {12.9855, 77.7368};
     private static final double[] MG_ROAD = {12.9716, 77.5960};
 
     private static long reachable(double[] office, Network net) {
-        return ROUTER.search(new SearchQuery(office[0], office[1], 45, Access.WALK, 15, TimeOfDay.MORNING, net))
+        return reachable(ROUTER, office, net);
+    }
+
+    private static long reachable(Router router, double[] office, Network net) {
+        return router.search(new SearchQuery(office[0], office[1], 45, Access.WALK, 15, TimeOfDay.MORNING, net))
                 .reachableCount();
+    }
+
+    /** The fix can only add wards or make them quicker; on these searches the counts stay the same. */
+    @Test
+    void sameCountsWithTheRideFix() {
+        assertEquals(17, reachable(FIXED, ITPL, Network.METRO));
+        assertEquals(22, reachable(FIXED, ITPL, Network.ALL));
+        assertEquals(50, reachable(FIXED, MG_ROAD, Network.METRO));
+        assertEquals(86, reachable(FIXED, MG_ROAD, Network.ALL));
     }
 
     @Test

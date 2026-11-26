@@ -38,6 +38,9 @@ public record Trip(int ward, String wardName, int minutes, boolean overLimit, bo
 
     public record MetroLine(String id, String name, String color) {}
 
-    /** {@code otherRoutes}: how many more route patterns were counted together for this ride. */
-    public record BusRide(String label, int otherRoutes) {}
+    /**
+     * {@code otherRoutes}: how many more route numbers have buses counted together for this ride (the wait
+     * uses all of them); {@code otherRouteNumbers} lists them.
+     */
+    public record BusRide(String label, int otherRoutes, List<String> otherRouteNumbers) {}
 }

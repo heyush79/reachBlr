@@ -28,8 +28,14 @@ function StepText({ step, palette }: { step: Step; palette: Palette }) {
   if (chipText && rest.includes(chipText)) {
     const i = rest.indexOf(chipText);
     parts.push(rest.slice(0, i));
+    const others = step.bus?.otherRouteNumbers;
     parts.push(
-      <span key="chip" className="chip" style={{ background: chipColour, color: step.line?.id === "YELLOW" ? "#141821" : "#fff" }}>
+      <span
+        key="chip"
+        className="chip"
+        style={{ background: chipColour, color: step.line?.id === "YELLOW" ? "#141821" : "#fff" }}
+        title={others?.length ? `Buses on these routes are counted for the wait too: ${others.join(", ")}` : undefined}
+      >
         {chipText}
       </span>,
     );

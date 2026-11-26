@@ -46,8 +46,11 @@ GTFS (General Transit Feed Specification) is the standard file format for public
 - Route labels keep the first word of each route name, for example `KBS-1I`, not `KBS-1I BEMLF-KDG`.
 
 **`build_places.py`**
-- Counts the places inside each ward, and measures how far the nearest one is from the ward's centroid.
-- Its tag rules reproduce the prototype's counts exactly. They were checked ward by ward on the same data.
+- Counts the places inside each ward, and measures how far the nearest one is from the ward centre: the centroid
+  (geometric centre), or a point inside the ward where the centroid falls outside it (9 oddly shaped wards). The
+  prototype always used the centroid; `--like-prototype` does too.
+- Its tag rules are the prototype's. Checked ward by ward on the same data, `--like-prototype` reproduces the
+  prototype's counts exactly.
 
 | Type | OpenStreetMap tags |
 |---|---|
@@ -59,7 +62,8 @@ GTFS (General Transit Feed Specification) is the standard file format for public
 | Pharmacy | `amenity=pharmacy` |
 | Place to eat | `amenity=restaurant`, `amenity=fast_food` or `amenity=cafe` |
 
-Like the prototype, it counts OSM points and outlines but not *relations* (places drawn as several pieces). That leaves out about 70 big parks, many of them lake parks. `--with-relations` counts them.
+Unlike the prototype, it also counts *relations*: places drawn as several pieces, such as many big lake parks. That adds
+58 parks inside wards (1,838 instead of 1,780), 11 schools and 7 hospitals or clinics. `--like-prototype` leaves them out.
 
 **Being polite to the Overpass servers.**
 - It only uses the maps.mail.ru mirror. The main server (overpass-api.de) refuses AI-agent traffic, so the script never calls it.
