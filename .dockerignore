@@ -1,0 +1,12 @@
+# Keep build contexts small and free of secrets
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/target
+pipeline/raw
+pipeline/.venv
+reference
+**/.DS_Store

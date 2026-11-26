@@ -111,13 +111,14 @@ for (const q of __Q) {
     reachable: res.filter(r => r && r.t <= st.limit).length,
     nearestStation: { name: last.nearest.s.n, minutes: last.nearest.m, metres: last.nearest.d },
     nearestBusStop: useBus() && last.nearBus ? { name: B.names[last.nearBus.i], metres: last.nearBus.d, patterns: B.sp[last.nearBus.i].length / 2 } : null,
-    ms,
     wards,
   });
+  __TIMES.push(ms);
 }
 __OUT = __results;
 `;
-const ctx = { __D: D, __RAW: RAW, __Q: QUERIES, __OUT: null, __SCORES: null, performance, console };
+// timings are printed, not saved, so the file is the same on every run (CI checks it is up to date)
+const ctx = { __D: D, __RAW: RAW, __Q: QUERIES, __OUT: null, __SCORES: null, __TIMES: [], performance, console };
 vm.createContext(ctx);
 vm.runInContext(code + "\n" + harness, ctx, { filename: "prototype-routing.js" });
 
@@ -128,6 +129,6 @@ const doc = {
   scores: ctx.__SCORES,
 };
 writeFileSync(OUT, JSON.stringify(doc));
-for (const r of ctx.__OUT) {
-  console.log(`${r.id.padEnd(44)} reachable ${String(r.reachable).padStart(3)}  (${r.ms.toFixed(0)} ms)`);
-}
+ctx.__OUT.forEach((r, i) => {
+  console.log(`${r.id.padEnd(44)} reachable ${String(r.reachable).padStart(3)}  (${ctx.__TIMES[i].toFixed(0)} ms)`);
+});

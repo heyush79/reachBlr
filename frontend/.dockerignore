@@ -1,0 +1,5 @@
+# The image installs its own dependencies (npm ci); never copy the host's
+node_modules
+dist
+.DS_Store
+*.log

@@ -1,0 +1,23 @@
+# Run everything locally with one command:  docker compose up --build
+# Then open http://localhost:8080
+# Optional: put GOOGLE_PLACES_API_KEY (and the rate limits) in .env to turn on "Nearby on Google".
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ALLOWED_ORIGINS: http://localhost:8080
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
