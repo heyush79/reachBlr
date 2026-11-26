@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: commute-map
+  mvc:
+    problemdetails:
+      enabled: true
+  jackson:
+    default-property-inclusion: always
+
+server:
+  port: ${PORT:8080}
+  # trust X-Forwarded-* headers from the reverse proxy (nginx / the hosting platform)
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,application/geo+json,application/problem+json
+    min-response-size: 1KB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+commute:
+  data-dir: ${COMMUTE_DATA_DIR:../data}
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
+  search-cache-size: 32
+  # true = also find trips that leave from a stop you could have walked to (see Router); false = same as the prototype
+  ride-fix: ${RIDE_FIX:false}
+  # Preset offices (approximate locations), same as the prototype
+  offices:
+    - { name: "ITPL, Whitefield", lat: 12.9855, lon: 77.7368 }
+    - { name: "Manyata Tech Park, Nagawara", lat: 13.0472, lon: 77.6205 }
+    - { name: "Embassy Tech Village, Bellandur (ORR)", lat: 12.9298, lon: 77.6871 }
+    - { name: "Prestige Tech Park, Kadubeesanahalli", lat: 12.9406, lon: 77.6967 }
+    - { name: "Bagmane Tech Park, CV Raman Nagar", lat: 12.9806, lon: 77.6626 }
+    - { name: "Embassy GolfLinks, Domlur", lat: 12.9548, lon: 77.6447 }
+    - { name: "Electronic City Phase 1", lat: 12.8452, lon: 77.6602 }
+    - { name: "MG Road and UB City (CBD)", lat: 12.9716, lon: 77.5960 }
+    - { name: "Koramangala", lat: 12.9352, lon: 77.6245 }
+    - { name: "HSR Layout", lat: 12.9116, lon: 77.6389 }
+    - { name: "Global Village Tech Park, RR Nagar", lat: 12.9128, lon: 77.4993 }
+
+logging:
+  level:
+    in.commutemap: INFO
