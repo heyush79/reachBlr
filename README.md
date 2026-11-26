@@ -93,9 +93,16 @@ One improvement on the prototype is switched on, the **ride fix**:
   1–10 minutes quicker, mostly when going by auto.
 - `RIDE_FIX=false` gives the prototype's exact results. The prototype comparison tests run that way.
 
-Another small difference from the prototype, on purpose: **"or N other routes"** after a bus counts distinct route
-*numbers* (500-D, 335-E…), not route variants (one number can have several sets of stops). The same goes for "N routes
-stop there". Hover over the bus chip to see the numbers.
+Three smaller differences from the prototype, all on purpose:
+
+- **"or N other routes"** after a bus counts distinct route *numbers* (500-D, 335-E…), not route variants (one number
+  can have several sets of stops). The same goes for "N routes stop there". Hover over the bus chip to see the numbers.
+- **Big parks count.** Places drawn on OpenStreetMap as several pieces ("relations"), such as many lake parks, are now
+  counted. That adds 58 parks inside wards, plus 11 schools and 7 hospitals or clinics.
+- **"Nearest" is measured from inside the ward.** The prototype measured from the ward's centroid (geometric centre),
+  which falls outside 9 oddly shaped wards. Those now use a point inside the ward; every other ward is unchanged.
+
+`python pipeline/build_places.py --like-prototype` rebuilds the place data the prototype's way.
 
 ## Run it
 
@@ -191,8 +198,6 @@ The files in `data/` are derived from ODbL and CC BY sources and keep those lice
   Walking distances are straight lines × 1.3.
 - **Missing places.** OpenStreetMap is built by volunteers and misses many places, especially gyms and small shops: 139
   of 243 wards have no gym mapped. Scores compare wards with each other, so treat counts as a guide.
-  - The "nearest" distance is measured from the ward's centroid (its geometric centre), which falls outside 9 oddly
-    shaped wards.
 - **Old ward map.** These are the 243 BBMP wards. Bengaluru has since moved to the Greater Bengaluru Authority with new
   wards.
 - **Hosting.** The OpenFreeMap tile service is free with no uptime promise. The Google proxy's per-visitor limit goes by

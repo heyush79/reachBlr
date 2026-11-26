@@ -46,7 +46,9 @@ GTFS (General Transit Feed Specification) is the standard file format for public
 - Route labels keep the first word of each route name, for example `KBS-1I`, not `KBS-1I BEMLF-KDG`.
 
 **`build_places.py`**
-- Counts the places inside each ward, and measures how far the nearest one is from the ward's centroid.
+- Counts the places inside each ward, and measures how far the nearest one is from the ward centre: the centroid
+  (geometric centre), or a point inside the ward where the centroid falls outside it (9 oddly shaped wards). The
+  prototype always used the centroid; `--like-prototype` does too.
 - Its tag rules are the prototype's. Checked ward by ward on the same data, `--like-prototype` reproduces the
   prototype's counts exactly.
 

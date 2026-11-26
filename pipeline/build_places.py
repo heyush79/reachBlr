@@ -1,7 +1,9 @@
 """Count everyday places per ward from OpenStreetMap, through the Overpass API.
 
 Writes data/places.json: for each ward and each place type, how many are inside the ward and how far
-the nearest one is from the ward's centroid (in units of 10 m).
+the nearest one is from the ward centre (in units of 10 m). The ward centre is its centroid when that lies
+inside the ward, and otherwise a point inside it (the same rule as the app's ward centre). The prototype
+always used the centroid, which falls outside 9 oddly shaped wards.
 
 Being a good citizen of the Overpass servers (lessons from the prototype):
 - Use the maps.mail.ru mirror. The main server (overpass-api.de) refuses AI-agent traffic, so this
@@ -19,7 +21,7 @@ saved replies: gyms, schools and groceries matched in every ward).
 
 Unlike the prototype, places drawn as several pieces (OSM "relations") are counted too, as well as
 points (nodes) and outlines (ways). The prototype left them out, which missed about 70 big parks, many
-of them lake parks. --like-prototype counts the prototype's way, to reproduce its numbers.
+of them lake parks. --like-prototype counts and measures the prototype's way, to reproduce its numbers.
 
 The data is © OpenStreetMap contributors, available under the ODbL. The counts in places.json are
 a derived database, so they carry the same licence and credit.
@@ -166,7 +168,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--refetch", action="store_true", help="ignore saved replies and download again")
     ap.add_argument("--like-prototype", action="store_true",
-                    help="count the prototype's way, to reproduce its numbers: leave out OSM relations")
+                    help="count the prototype's way, to reproduce its numbers: leave out OSM relations, "
+                         "and measure nearest places from the centroid even when it falls outside the ward")
     a = ap.parse_args()
     count_relations = not a.like_prototype
 
@@ -218,9 +221,10 @@ def main():
         xs = [lo * cos * 111320 for la, lo in plist]
         ys = [la * 110574 for la, lo in plist]
         for wi, g in enumerate(geoms):
-            # Like the prototype: measured from the centroid of the full ward shape. For a few oddly
-            # shaped wards this point lies outside the ward (the app's ward centre does not).
+            # the centroid, or a point inside the ward where the centroid falls outside it (9 wards)
             c = g.centroid
+            if not a.like_prototype and not g.contains(c):
+                c = g.representative_point()
             cx, cy = c.x * cos * 111320, c.y * 110574
             d = min(math.hypot(x - cx, y - cy) for x, y in zip(xs, ys))
             nearest[wi][k] = round(d / 10)
@@ -235,6 +239,7 @@ def main():
         source="OpenStreetMap via Overpass API (maps.mail.ru mirror). © OpenStreetMap contributors, ODbL.",
         base=osm_base or datetime.fromtimestamp(base, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         relations=count_relations,
+        nearestFrom="centroid" if a.like_prototype else "ward centre (centroid, or a point inside the ward if it falls outside)",
         categories=[{k: c[k] for k in ("key", "label", "short", "one", "tags")} for c in CATEGORIES],
         wards=[dict(no=w["no"], count=count[i], nearest10m=nearest[i]) for i, w in enumerate(wards)],
     )
