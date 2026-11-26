@@ -191,8 +191,6 @@ The files in `data/` are derived from ODbL and CC BY sources and keep those lice
   Walking distances are straight lines × 1.3.
 - **Missing places.** OpenStreetMap is built by volunteers and misses many places, especially gyms and small shops: 139
   of 243 wards have no gym mapped. Scores compare wards with each other, so treat counts as a guide.
-  - Like the prototype, places mapped as several pieces (OpenStreetMap "relations") aren't counted, which leaves out
-    about 70 big lake parks.
   - The "nearest" distance is measured from the ward's centroid (its geometric centre), which falls outside 9 oddly
     shaped wards.
 - **Old ward map.** These are the 243 BBMP wards. Bengaluru has since moved to the Greater Bengaluru Authority with new

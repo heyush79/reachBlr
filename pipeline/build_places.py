@@ -14,16 +14,17 @@ Being a good citizen of the Overpass servers (lessons from the prototype):
 - Raw replies are saved in pipeline/raw/osm/, so re-running the counting step needs no network.
   Use --refetch to download again.
 
-Tag rules: these reproduce the prototype's counts exactly (checked ward by ward against the
-prototype's data.json on the saved replies: gyms, schools and groceries match in every ward).
-Like the prototype, only OSM nodes (points) and ways (outlines) are counted, not relations
-(places drawn as several pieces). That misses some big parks, such as many "Lake Park"s.
---with-relations counts them too.
+Tag rules: the same as the prototype's (checked ward by ward against the prototype's data.json on the
+saved replies: gyms, schools and groceries matched in every ward).
+
+Unlike the prototype, places drawn as several pieces (OSM "relations") are counted too, as well as
+points (nodes) and outlines (ways). The prototype left them out, which missed about 70 big parks, many
+of them lake parks. --like-prototype counts the prototype's way, to reproduce its numbers.
 
 The data is © OpenStreetMap contributors, available under the ODbL. The counts in places.json are
 a derived database, so they carry the same licence and credit.
 
-Usage: python pipeline/build_places.py [--refetch] [--with-relations]
+Usage: python pipeline/build_places.py [--refetch] [--like-prototype]
 """
 import argparse
 import json
@@ -164,9 +165,10 @@ def classify(el):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--refetch", action="store_true", help="ignore saved replies and download again")
-    ap.add_argument("--with-relations", action="store_true",
-                    help="also count places mapped as OSM relations (e.g. big lake parks); the prototype did not")
+    ap.add_argument("--like-prototype", action="store_true",
+                    help="count the prototype's way, to reproduce its numbers: leave out OSM relations")
     a = ap.parse_args()
+    count_relations = not a.like_prototype
 
     wards = json.load(open(OUT / "wards.json"))["wards"]
     geo = json.load(open(RAW / "wards" / "BBMP.geojson", encoding="utf-8"))
@@ -195,7 +197,7 @@ def main():
 
     pts = [[] for _ in CATEGORIES]
     for el in elements:
-        if el["type"] == "relation" and not a.with_relations:
+        if el["type"] == "relation" and not count_relations:
             continue
         p = point_of(el)
         if not p:
@@ -232,7 +234,7 @@ def main():
     out = dict(
         source="OpenStreetMap via Overpass API (maps.mail.ru mirror). © OpenStreetMap contributors, ODbL.",
         base=osm_base or datetime.fromtimestamp(base, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        relations=a.with_relations,
+        relations=count_relations,
         categories=[{k: c[k] for k in ("key", "label", "short", "one", "tags")} for c in CATEGORIES],
         wards=[dict(no=w["no"], count=count[i], nearest10m=nearest[i]) for i, w in enumerate(wards)],
     )

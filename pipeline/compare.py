@@ -1,7 +1,7 @@
 """Compare data/ with the prototype's data files and report every difference.
 
-Routing data (metro, wards, bus) should match exactly. Place counts may drift, because
-OpenStreetMap changes every day.
+Routing data (metro, wards, bus) should match exactly. Place counts differ: OpenStreetMap changes every
+day, and build_places.py now counts places the prototype left out (see its --like-prototype option).
 
 Usage: python pipeline/compare.py [data_dir]
 """
@@ -59,7 +59,7 @@ def main() -> int:
     pf = DATA / "places.json"
     if pf.exists() and r_places:
         places = json.load(open(pf))
-        print(f"Places (data as of {places['base']}, prototype {r_places['base']}; drift is expected)")
+        print(f"Places (data as of {places['base']}, prototype {r_places['base']}; differences are expected)")
         for k, cat in enumerate(places["categories"]):
             a = [w["count"][k] for w in places["wards"]]
             b = [w["count"][k] for w in r_places["wards"]]
