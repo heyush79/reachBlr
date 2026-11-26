@@ -26,7 +26,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class GoldenParityTest {
 
-    private static final Router ROUTER = new Router(TestGraph.get());
+    /** Prototype mode: the ride fix off, so the answers must match the prototype exactly. */
+    private static final Router ROUTER = new Router(TestGraph.get(), false);
 
     @TestFactory
     Stream<DynamicTest> sameAnswersAsThePrototype() throws Exception {

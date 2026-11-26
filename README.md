@@ -85,12 +85,13 @@ both give exactly the same minutes, lines and step wording for all 243 wards, ov
 | Pattandur Agrahara → Indiranagar, Purple Line | 27 min |
 | Manyatha Tech Park → Kalyananagara by bus, morning | about 13 min |
 
-There's an optional improvement, `RIDE_FIX=true`, which is off by default so results match the prototype:
+One improvement on the prototype is switched on, the **ride fix**:
 
 - The prototype keeps one best time per stop. So when a stop is reached fastest on foot, a slightly slower way there that
   includes a ride is lost, and wards that need it can be missed.
 - The fix keeps both times. It never makes a ward slower, leaves the counts above unchanged, and makes some wards
   1–10 minutes quicker, mostly when going by auto.
+- `RIDE_FIX=false` gives the prototype's exact results. The prototype comparison tests run that way.
 
 ## Run it
 

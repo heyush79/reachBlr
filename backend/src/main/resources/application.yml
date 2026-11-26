@@ -39,8 +39,8 @@ commute:
     global-per-day: ${PLACES_GLOBAL_PER_DAY:500}
     max-results: 10
     radius-metres: 1000
-  # true = also find trips that leave from a stop you could have walked to (see Router); false = same as the prototype
-  ride-fix: ${RIDE_FIX:false}
+  # true = also find trips that leave from a stop you could have walked to (see Router); false = the prototype's results
+  ride-fix: ${RIDE_FIX:true}
   # Preset offices (approximate locations), same as the prototype
   offices:
     - { name: "ITPL, Whitefield", lat: 12.9855, lon: 77.7368 }
