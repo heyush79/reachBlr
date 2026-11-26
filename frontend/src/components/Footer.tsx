@@ -1,5 +1,8 @@
 /** How the times are worked out, and where the data comes from (wording from the prototype, corrected). */
-export function Footer() {
+export function Footer({ placesAsOf }: { placesAsOf?: string | null }) {
+  const asOf = placesAsOf
+    ? new Date(placesAsOf).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    : null;
   return (
     <footer>
       <h2>How the times are worked out</h2>
@@ -28,6 +31,16 @@ export function Footer() {
         A trip must include at least one bus or metro ride, unless the ward's centre is close enough to walk or ride to
         directly. Times are from your office outward; the morning trip to work is usually close to this. Office
         locations are approximate.
+      </p>
+      <p>
+        <b>What's nearby.</b> Gyms, parks, hospitals and clinics, schools, grocery shops, pharmacies and places to eat
+        come from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
+        {asOf ? ` (data as of ${asOf}` : " ("}, © OpenStreetMap contributors, ODbL). The map is built by volunteers and
+        misses many places, especially small shops and gyms, so treat counts as a guide, not a full list. Each ward
+        shows how many of each are inside it and how far the nearest one is from the ward centre. A ward's score for
+        each type compares how many it has per square km with all 243 wards (100 means more than almost every other
+        ward, 0 means none mapped). The everyday needs score is the average of the seven. "Must have within 1 km" keeps
+        a ward if it has at least one inside, or one within 1 km of its centre.
       </p>
       <p>
         Ward boundaries: 243 BBMP wards from{" "}

@@ -87,22 +87,26 @@ export function toQuery(s: Settings): string {
   return p.toString();
 }
 
-/** Page address first, then what was saved last time, then defaults. */
+const KEYS = ["lat", "lon", "o", "limit", "mode", "leg", "when", "net", "colour", "must", "sort"];
+
+/**
+ * The settings to start with. A page address with any settings in it is a shared link: it shows exactly
+ * what the sender saw (anything it leaves out is a default). Only a plain address uses what was saved last time.
+ */
+export function startSettings(saved: string | null, url: string, officeCount: number, placeTypeCount: number): Settings {
+  const params = new URLSearchParams(url);
+  if (KEYS.some(k => params.has(k))) return { ...DEFAULTS, ...fromQuery(url, officeCount, placeTypeCount) };
+  return { ...DEFAULTS, ...(saved ? fromQuery(saved, officeCount, placeTypeCount) : {}) };
+}
+
 export function loadSettings(officeCount: number, placeTypeCount: number): Settings {
-  let saved: Partial<Settings> = {};
+  let saved: string | null = null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) saved = fromQuery(raw, officeCount, placeTypeCount);
+    saved = localStorage.getItem(STORAGE_KEY);
   } catch {
     /* private mode or blocked storage */
   }
-  const fromUrl = fromQuery(window.location.search, officeCount, placeTypeCount);
-  // an office from the address replaces a saved custom spot, and the other way round
-  if (fromUrl.custom || fromUrl.office !== undefined) {
-    delete saved.custom;
-    delete saved.office;
-  }
-  return { ...DEFAULTS, ...saved, ...fromUrl };
+  return startSettings(saved, window.location.search, officeCount, placeTypeCount);
 }
 
 export function saveSettings(s: Settings): void {

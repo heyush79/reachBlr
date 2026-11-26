@@ -105,7 +105,10 @@ class ApiTest {
                 .andExpect(jsonPath("$.type").value("FeatureCollection"))
                 .andExpect(jsonPath("$.features.length()").value(243))
                 .andExpect(jsonPath("$.features[0].geometry.type").value("MultiPolygon"))
-                .andExpect(header().string("Cache-Control", containsString("max-age=3600")))
+                .andExpect(jsonPath("$.features[0].properties.count.length()").value(7))
+                .andExpect(jsonPath("$.features[0].properties.scores.length()").value(7))
+                .andExpect(jsonPath("$.features[0].properties.score").isNumber())
+                .andExpect(header().string("Cache-Control", containsString("no-cache")))
                 .andReturn();
         String etag = r.getResponse().getHeader("ETag");
         mvc.perform(get("/api/wards").header("If-None-Match", etag)).andExpect(status().isNotModified());

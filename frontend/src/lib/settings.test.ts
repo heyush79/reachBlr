@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULTS, fromQuery, officeLocation, searchParams, toQuery, type Settings } from "./settings";
+import { DEFAULTS, fromQuery, officeLocation, searchParams, startSettings, toQuery, type Settings } from "./settings";
 
 const OFFICES = [
   { name: "ITPL, Whitefield", lat: 12.9855, lon: 77.7368 },
@@ -41,5 +41,20 @@ describe("search parameters", () => {
 
   it("prefer a picked spot", () => {
     expect(officeLocation({ ...DEFAULTS, custom: [12.9, 77.6] }, OFFICES)).toEqual([12.9, 77.6]);
+  });
+});
+
+describe("starting settings", () => {
+  it("use what was saved when the address is plain", () => {
+    expect(startSettings("o=1&must=0,5", "", 2, 7)).toEqual({ ...DEFAULTS, office: 1, must: [0, 5] });
+  });
+  it("show a shared link exactly, ignoring what was saved", () => {
+    expect(startSettings("must=0,5&net=metro", "?o=1", 2, 7)).toEqual({ ...DEFAULTS, office: 1 });
+  });
+  it("treat a link with only bad values as a link too", () => {
+    expect(startSettings("must=0,5", "?mode=bike", 2, 7)).toEqual(DEFAULTS);
+  });
+  it("start from defaults the first time", () => {
+    expect(startSettings(null, "", 2, 7)).toEqual(DEFAULTS);
   });
 });

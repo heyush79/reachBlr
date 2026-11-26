@@ -111,3 +111,22 @@ footer a { color: var(--ink); }
   aside { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
   .legend { max-width: calc(100% - 24px); bottom: 34px; }
 }
+
+/* ward scores and filters */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button {
+  min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--out);
+  background: var(--bg); color: var(--ink); font: 14px inherit; cursor: pointer;
+}
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 600; }
+.nb { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+.nb td { padding: 5px 0; border-top: 1px solid var(--line); }
+.nb td:nth-child(2), .nb td:nth-child(3) { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 8px; }
+.nb .bar { display: block; height: 6px; border-radius: 3px; background: var(--line); margin-top: 4px; overflow: hidden; }
+.nb .bar i { display: block; height: 100%; background: var(--b2); }
+.nb-title { margin-top: 12px; }
+.nb-note { font-size: 13px; margin-top: 8px; }
+.score {
+  display: inline-block; min-width: 44px; text-align: center; padding: 1px 8px; border-radius: 999px;
+  background: var(--b1); color: var(--bg); font-weight: 700; font-size: 13px;
+}

@@ -11,6 +11,8 @@ for all 243 wards:
 - the lines used,
 - the wording of every step.
 
+`PlaceScoresTest` checks the ward scores against the prototype's own `buildPlaces()`, which is cut out the same way.
+
 Re-run it after changing `data/`:
 
 ```bash

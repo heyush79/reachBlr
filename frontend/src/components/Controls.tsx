@@ -1,16 +1,18 @@
-import type { Office } from "../types";
+import type { Office, PlaceType } from "../types";
 import type { Settings } from "../lib/settings";
 import { Segmented } from "./Segmented";
 
 interface Props {
   offices: Office[];
+  placeTypes: PlaceType[];
   settings: Settings;
   placing: boolean;
   onChange: (patch: Partial<Settings>) => void;
   onPlacing: (on: boolean) => void;
 }
 
-export function Controls({ offices, settings: s, placing, onChange, onPlacing }: Props) {
+export function Controls({ offices, placeTypes, settings: s, placing, onChange, onPlacing }: Props) {
+  const toggleMust = (k: number) => onChange({ must: s.must.includes(k) ? s.must.filter(x => x !== k) : [...s.must, k] });
   return (
     <>
       <label htmlFor="office">Your office</label>
@@ -91,6 +93,30 @@ export function Controls({ offices, settings: s, placing, onChange, onPlacing }:
         ]}
         onChange={when => onChange({ when })}
       />
+
+      {placeTypes.length > 0 && (
+        <>
+          <label htmlFor="colour">Colour the map by</label>
+          <select id="colour" value={s.colour} onChange={e => onChange({ colour: e.target.value })}>
+            <option value="time">Commute time</option>
+            <option value="score">Everyday needs score</option>
+            {placeTypes.map((t, k) => (
+              <option key={t.key} value={String(k)}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+
+          <span className="lab">Must have within 1 km</span>
+          <div className="chips" role="group" aria-label="Must have within 1 km">
+            {placeTypes.map((t, k) => (
+              <button key={t.key} type="button" aria-pressed={s.must.includes(k)} onClick={() => toggleMust(k)}>
+                {t.shortLabel}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }

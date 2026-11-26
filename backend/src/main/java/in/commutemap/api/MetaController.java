@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import in.commutemap.config.CommuteProperties;
 import in.commutemap.data.TransitData;
 import in.commutemap.data.TransitData.Ward;
+import in.commutemap.places.PlaceScores;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +15,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Duration;
 import java.util.*;
 
 /**
  * Data that only changes when the app is redeployed: offices, metro lines, ward shapes.
- * Built once at startup; browsers may cache it for an hour and re-check it with an ETag.
+ * Built once at startup. Browsers keep a copy but re-check it on every visit with its ETag, so an
+ * unchanged copy costs only a tiny 304 reply, and a redeploy with new data is picked up at once.
  */
 @RestController
 @RequestMapping("/api")
@@ -29,9 +30,10 @@ public class MetaController {
     private final Cached meta;
     private final Cached wards;
 
-    public MetaController(TransitData data, CommuteProperties props, ObjectMapper json) throws JsonProcessingException {
+    public MetaController(TransitData data, CommuteProperties props, PlaceScores scores, ObjectMapper json)
+            throws JsonProcessingException {
         this.meta = new Cached(json.writeValueAsBytes(meta(data, props)));
-        this.wards = new Cached(json.writeValueAsBytes(wardsGeoJson(data)));
+        this.wards = new Cached(json.writeValueAsBytes(wardsGeoJson(data, scores)));
     }
 
     /** Preset offices, metro lines and stations, place types and data versions. */
@@ -40,7 +42,11 @@ public class MetaController {
         return meta.respond(etag, MediaType.APPLICATION_JSON);
     }
 
-    /** All 243 wards as GeoJSON (the standard JSON format for map shapes), with name, number and area. */
+    /**
+     * All 243 wards as GeoJSON (the standard JSON format for map shapes): name, number, area, and per place type
+     * (in the order of {@code placeTypes} in /api/meta) the count inside, the nearest one from the centre in
+     * units of 10 m (-1 = none), and the score; plus the everyday needs score.
+     */
     @GetMapping("/wards")
     public ResponseEntity<byte[]> wards(@RequestHeader(value = "If-None-Match", required = false) String etag) {
         return wards.respond(etag, GEO_JSON);
@@ -70,7 +76,7 @@ public class MetaController {
         return m;
     }
 
-    private static Map<String, Object> wardsGeoJson(TransitData d) {
+    private static Map<String, Object> wardsGeoJson(TransitData d, PlaceScores scores) {
         List<Map<String, Object>> features = new ArrayList<>();
         for (Ward w : d.wards()) {
             List<List<List<double[]>>> polygons = new ArrayList<>();
@@ -85,6 +91,12 @@ public class MetaController {
             props.put("name", w.name());
             props.put("areaKm2", w.areaKm2());
             props.put("centre", w.centre());
+            if (d.places() != null) {
+                props.put("count", d.places().count()[w.index()]);
+                props.put("nearest10m", d.places().nearest10m()[w.index()]);
+                props.put("scores", scores.scores(w.index()));
+                props.put("score", scores.overall(w.index()));
+            }
             Map<String, Object> f = new LinkedHashMap<>();
             f.put("type", "Feature");
             f.put("id", w.index());
@@ -107,7 +119,7 @@ public class MetaController {
         }
 
         ResponseEntity<byte[]> respond(String ifNoneMatch, MediaType type) {
-            CacheControl cache = CacheControl.maxAge(Duration.ofHours(1)).cachePublic();
+            CacheControl cache = CacheControl.noCache().cachePublic();
             if (etag.equals(ifNoneMatch)) {
                 return ResponseEntity.status(304).eTag(etag).cacheControl(cache).build();
             }

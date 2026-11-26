@@ -2,6 +2,7 @@ package in.commutemap.config;
 
 import in.commutemap.data.DataLoader;
 import in.commutemap.data.TransitData;
+import in.commutemap.places.PlaceScores;
 import in.commutemap.routing.Router;
 import in.commutemap.routing.TransitGraph;
 import org.slf4j.Logger;
@@ -34,6 +35,11 @@ public class TransitConfig {
         log.info("Built the transit graph ({} bus stops + {} metro states) in {} ms",
                 g.busStopCount(), g.metroStateCount(), (System.nanoTime() - t0) / 1_000_000);
         return g;
+    }
+
+    @Bean
+    PlaceScores placeScores(TransitData data) {
+        return new PlaceScores(data);
     }
 
     @Bean

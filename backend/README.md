@@ -18,7 +18,7 @@ You need Java 21 or newer. The Maven wrapper downloads Maven itself.
 |---|---|
 | `GET /api/reach?lat=&lon=&limit=&mode=&leg=&when=&net=` | minutes to every reachable ward (quickest first), the lines used, the closest station and bus stop |
 | `GET /api/trip?...same...&ward=` | the step-by-step trip to one ward, with shapes to draw |
-| `GET /api/wards` | the 243 ward outlines as GeoJSON. Cached by browsers for an hour; ETag gives 304 on re-checks |
+| `GET /api/wards` | the 243 ward outlines as GeoJSON, with each ward's place counts, nearest distances and scores. Browsers re-check it on every visit with its ETag; when it hasn't changed, the reply is a tiny 304 |
 | `GET /api/meta` | preset offices, metro lines and stations, place types, data versions |
 | `GET /actuator/health` | `{"status":"UP"}` when the app is ready |
 

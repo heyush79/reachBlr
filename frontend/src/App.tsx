@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import type { LatLon, Meta, WardsGeoJson } from "./types";
-import { DARK, LIGHT, timeBand, timeLegend } from "./lib/colours";
+import { DARK, LIGHT, SCORE_LEGEND, scoreBand, timeBand, timeLegend } from "./lib/colours";
 import { useDarkMode, useDebounced, useLoad } from "./lib/hooks";
 import { loadSettings, officeLocation, officeName, saveSettings, searchParams, type Settings } from "./lib/settings";
+import { mustText, passesMust, scoreFor, scoreName } from "./lib/places";
 import { nearestNotes } from "./lib/text";
 import { Controls } from "./components/Controls";
 import { Footer } from "./components/Footer";
 import { Legend } from "./components/Legend";
 import { MapView } from "./components/MapView";
+import { PlacesTable } from "./components/PlacesTable";
+import { Segmented } from "./components/Segmented";
 import { WardDetail } from "./components/WardDetail";
 import { WardList } from "./components/WardList";
 
@@ -39,7 +42,7 @@ export default function App() {
         </p>
       )}
       {boot && "meta" in boot && <CommuteMap meta={boot.meta} wards={boot.wards} />}
-      <Footer />
+      <Footer placesAsOf={boot && "meta" in boot ? boot.meta.placesAsOf : null} />
     </>
   );
 }
@@ -62,13 +65,20 @@ function CommuteMap({ meta, wards }: { meta: Meta; wards: WardsGeoJson }) {
   const r = reach.data;
   const limit = r?.query.limit ?? settings.limit;
 
+  const props = useMemo(() => wards.features.map(f => f.properties), [wards]);
+  const { colour, must, sort } = settings;
   const byWard = useMemo(() => new Map((r?.wards ?? []).map(w => [w.ward, w])), [r]);
-  const ok = useMemo(() => (r?.wards ?? []).filter(w => w.minutes <= limit), [r, limit]);
+  // within the limit and with every must-have; quickest first (as the backend sends them) or best score first
+  const ok = useMemo(() => {
+    const rows = (r?.wards ?? []).filter(w => w.minutes <= limit && passesMust(props[w.ward], must));
+    if (sort === "score") rows.sort((a, b) => scoreFor(props[b.ward], colour) - scoreFor(props[a.ward], colour) || a.minutes - b.minutes);
+    return rows;
+  }, [r, limit, props, must, sort, colour]);
   const bands = useMemo(() => {
     const b: (number | null)[] = wards.features.map(() => null);
-    for (const w of ok) b[w.ward] = timeBand(w.minutes, limit);
+    for (const w of ok) b[w.ward] = colour === "time" ? timeBand(w.minutes, limit) : scoreBand(scoreFor(props[w.ward], colour));
     return b;
-  }, [ok, limit, wards]);
+  }, [ok, limit, wards, colour, props]);
 
   const office = officeLocation(settings, meta.offices);
   const officeLabel = officeName(settings, meta.offices);
@@ -111,17 +121,34 @@ function CommuteMap({ meta, wards }: { meta: Meta; wards: WardsGeoJson }) {
           onWardClick={setSelected}
           onPlace={onPlace}
         />
-        <Legend items={timeLegend(limit)} palette={palette} restLabel="longer" />
+        {colour === "time" ? (
+          <Legend items={timeLegend(limit)} palette={palette} restLabel={must.length ? "longer or missing a must-have" : "longer"} />
+        ) : (
+          <Legend
+            title={colour === "score" ? "Everyday needs score" : meta.placeTypes[Number(colour)]?.label}
+            items={SCORE_LEGEND}
+            palette={palette}
+            restLabel="not in reach"
+          />
+        )}
       </div>
 
       <aside>
-        <Controls offices={meta.offices} settings={settings} placing={placing} onChange={change} onPlacing={setPlacing} />
+        <Controls
+          offices={meta.offices}
+          placeTypes={meta.placeTypes}
+          settings={settings}
+          placing={placing}
+          onChange={change}
+          onPlacing={setPlacing}
+        />
 
         <div className="big" aria-live="polite">
           {r ? `${ok.length} of ${wards.features.length}` : " "}
         </div>
         <p className="sub">
           wards within {limit} min of {officeLabel}
+          {mustText(must, meta.placeTypes)}
           {reach.loading && <span className="updating"> · updating…</span>}
         </p>
         {reach.error && <p className="note error">Could not search: {reach.error}</p>}
@@ -144,16 +171,31 @@ function CommuteMap({ meta, wards }: { meta: Meta; wards: WardsGeoJson }) {
             limit={limit}
             trip={trip}
             palette={palette}
-          />
+          >
+            <PlacesTable ward={props[selected]} types={meta.placeTypes} />
+          </WardDetail>
         )}
 
-        <span className="lab">Reachable wards, quickest first</span>
+        <Segmented
+          label="Reachable wards"
+          value={sort}
+          options={[
+            { value: "time", label: "Quickest first" },
+            { value: "score", label: "Best for daily needs" },
+          ]}
+          onChange={s => change({ sort: s })}
+        />
         <WardList
           rows={ok}
           query={query}
           onQuery={setQuery}
           onPick={pickFromList}
-          emptyText="No ward fits these limits. Try a longer commute, a longer trip to the stop, or add buses."
+          extra={meta.placeTypes.length ? w => `${scoreName(colour, meta.placeTypes)} ${scoreFor(props[w.ward], colour)}` : undefined}
+          emptyText={
+            must.length
+              ? "No ward fits these limits and must-haves. Try fewer must-haves or a longer commute."
+              : "No ward fits these limits. Try a longer commute, a longer trip to the stop, or add buses."
+          }
         />
       </aside>
     </div>

@@ -49,6 +49,14 @@ export interface WardProps {
   name: string;
   areaKm2: number;
   centre: LatLon;
+  /** per place type, in the order of Meta.placeTypes: how many inside the ward */
+  count?: number[];
+  /** per place type: nearest one from the ward centre, in units of 10 m; -1 = none */
+  nearest10m?: number[];
+  /** per place type: 0-100, how the ward's density ranks among all wards */
+  scores?: number[];
+  /** everyday needs score: the average of the type scores */
+  score?: number;
 }
 
 export interface WardFeature {
