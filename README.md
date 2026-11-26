@@ -94,13 +94,20 @@ There's an optional improvement, `RIDE_FIX=true`, which is off by default so res
 
 ## Run it
 
-**With Docker (one command):**
+**With Docker (one command).** Docker Desktop must be running first:
 
 ```bash
-docker compose up --build
+docker desktop start                        # or open the Docker app; wait until this works:
+docker info --format '{{.ServerVersion}}'   # prints a version when the engine is ready
+docker compose up --build                   # then open http://localhost:8080
 ```
 
-Then open <http://localhost:8080>.
+- **Port 8080 taken?** Run `APP_PORT=8090 docker compose up --build` and open <http://localhost:8090>, or put
+  `APP_PORT=8090` in `.env`.
+- **Stop it** with `docker compose down`.
+- **Errors like `500 Internal Server Error ... docker.sock/_ping`, or `docker ps` hanging?** The Docker engine isn't ready
+  or is stuck. Check with `docker desktop status`, then run `docker desktop restart`. If that reports processes still
+  running, run `docker desktop stop --force` and then `docker desktop start`.
 
 **For development**, in two terminals (Java 21+, Node 22+):
 
@@ -108,6 +115,9 @@ Then open <http://localhost:8080>.
 cd backend && ./mvnw spring-boot:run             # API on http://localhost:8080
 cd frontend && npm install && npm run dev        # app on http://localhost:5173
 ```
+
+If 8080 is taken, use `PORT=8081 ./mvnw spring-boot:run` and `BACKEND_URL=http://localhost:8081 npm run dev`.
+If 5173 is taken, add `-- --port 5180` to `npm run dev`.
 
 **Nearby places from Google** are optional:
 

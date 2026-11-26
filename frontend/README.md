@@ -14,7 +14,8 @@ npm run lint
 npm run build      # type check + production build into dist/
 ```
 
-If port 5173 is taken, use `npx vite --port 5180`.
+If port 5173 is taken, use `npm run dev -- --port 5180`. If the backend runs on another port, tell the dev server where
+it is: `BACKEND_URL=http://localhost:8081 npm run dev`.
 
 `VITE_API_BASE` sets the backend's address when it lives on another site, e.g.
 `VITE_API_BASE=https://api.example.com npm run build`. Left empty, the app calls `/api` on its own site.
