@@ -167,7 +167,8 @@ public final class Router {
                     int i = c.stop(k);
                     double d = c.metres(k), m = access.minutes(d);
                     if (nearBus == null || d < nearBus.metres()) {
-                        nearBus = new NearestBusStop(i, g.stopName[i], d, m, g.stopPatterns[i].length / 2);
+                        nearBus = new NearestBusStop(i, g.stopName[i], d, m, g.stopRouteNumbers[i],
+                                g.stopPatterns[i].length / 2);
                     }
                     if (m <= lim) relax(i, m, Kind.START_BUS, -1, -1, -1, -1, 0, m, 0);
                 }

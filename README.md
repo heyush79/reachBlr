@@ -93,6 +93,10 @@ One improvement on the prototype is switched on, the **ride fix**:
   1–10 minutes quicker, mostly when going by auto.
 - `RIDE_FIX=false` gives the prototype's exact results. The prototype comparison tests run that way.
 
+Another small difference from the prototype, on purpose: **"or N other routes"** after a bus counts distinct route
+*numbers* (500-D, 335-E…), not route variants (one number can have several sets of stops). The same goes for "N routes
+stop there". Hover over the bus chip to see the numbers.
+
 ## Run it
 
 You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) for the one-command way; for development,
@@ -193,8 +197,6 @@ The files in `data/` are derived from ODbL and CC BY sources and keep those lice
     shaped wards.
 - **Old ward map.** These are the 243 BBMP wards. Bengaluru has since moved to the Greater Bengaluru Authority with new
   wards.
-- **Bus wording.** "or 96 other routes" counts route *patterns* (variants of a route), not distinct route numbers, as in
-  the prototype.
 - **Hosting.** The OpenFreeMap tile service is free with no uptime promise. The Google proxy's per-visitor limit goes by
   IP address, which a determined user could fake, but the site-wide daily cap still holds.
 

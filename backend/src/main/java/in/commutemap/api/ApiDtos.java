@@ -27,7 +27,7 @@ public final class ApiDtos {
     /** {@code minutes} by the chosen way of getting to a stop; {@code withinLeg} if that fits the trip-to-stop limit. */
     public record NearestStation(String name, double minutes, int metres, boolean withinLeg) {}
 
-    /** {@code routes}: route patterns that stop there. */
+    /** {@code routes}: how many distinct route numbers stop there. */
     public record NearestBusStop(String name, int metres, int walkMinutes, int routes) {}
 
     /** Answer to /api/trip. {@code trip} is null when no trip fits the limits. */

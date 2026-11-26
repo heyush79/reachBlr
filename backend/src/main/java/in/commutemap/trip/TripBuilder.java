@@ -66,14 +66,15 @@ public final class TripBuilder {
                         null, t.name(v), null, null, null, List.of(t.ll(t.from(v)), t.ll(v))));
             }
             if (k == Kind.BUS) {
-                String label = t.patternLabel(v);
-                int others = t.routes(v) - 1, stops = t.j(v) - t.i(v), wait = round(t.val(v)), ride = round(t.val2(v));
+                Search.BusRoutes routes = s.busRoutes(v);
+                String label = routes.label();
+                int others = routes.others().size(), stops = t.j(v) - t.i(v), wait = round(t.val(v)), ride = round(t.val2(v));
                 used.add("Bus " + label.split(" / ")[0]);
                 String text = "Wait about " + wait + " min, then bus " + label
                         + (others > 0 ? " or " + others + " other route" + (others > 1 ? "s" : "") : "")
                         + " to " + t.name(v) + ", " + stops + " stop" + (stops > 1 ? "s" : "") + ", about " + ride + " min";
-                steps.add(new Step(StepType.BUS, text, ride, wait, t.name(v), stops, null, new BusRide(label, others),
-                        t.busPath(v)));
+                steps.add(new Step(StepType.BUS, text, ride, wait, t.name(v), stops, null,
+                        new BusRide(label, others, routes.others()), t.busPath(v)));
             }
             if (k == Kind.START_METRO || k == Kind.ENTER || k == Kind.CHANGE) {
                 Line line = t.line(v);
@@ -155,14 +156,6 @@ public final class TripBuilder {
 
         int j(int v) {
             return s.alightPosition(v);
-        }
-
-        int routes(int v) {
-            return s.routesCounted(v);
-        }
-
-        String patternLabel(int v) {
-            return s.patternLabel(v);
         }
 
         boolean isBusStop(int v) {

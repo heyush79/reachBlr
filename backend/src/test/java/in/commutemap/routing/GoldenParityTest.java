@@ -84,11 +84,19 @@ class GoldenParityTest {
             expected.get("via").forEach(n -> via.add(n.asText()));
             if (!via.equals(trip.via())) problems.add("ward " + i + ": lines " + via + " vs " + trip.via());
             List<String> steps = new ArrayList<>();
-            expected.get("steps").forEach(n -> steps.add(unescape(n.asText())));
-            List<String> ours = trip.steps().stream().map(Trip.Step::text).toList();
+            expected.get("steps").forEach(n -> steps.add(withoutOtherRoutes(unescape(n.asText()))));
+            List<String> ours = trip.steps().stream().map(st -> withoutOtherRoutes(st.text())).toList();
             if (!steps.equals(ours)) problems.add("ward " + i + ": steps\n  prototype " + steps + "\n  Java      " + ours);
         }
         assertTrue(problems.isEmpty(), problems.size() + " differences:\n" + String.join("\n", problems));
+    }
+
+    /**
+     * "or N other routes" now counts route numbers, where the prototype counted route variants, so that part is
+     * left out of the comparison (BusRouteNumbersTest checks it). Everything else must match word for word.
+     */
+    private static String withoutOtherRoutes(String step) {
+        return step.replaceAll(" or \\d+ other routes?", "");
     }
 
     /** The prototype HTML-escaped names; the golden file keeps that escaping. */

@@ -49,7 +49,7 @@ public class ReachController {
         return new ReachResponse(echo(s.query()), s.reachableCount(), wards,
                 new NearestStation(ns.name(), round1(ns.minutes()), (int) Math.round(ns.metres()), ns.minutes() <= q.leg()),
                 nb == null ? null : new NearestBusStop(nb.name(), (int) Math.round(nb.metres()),
-                        (int) Math.max(1, Math.round(Geo.walkMin(nb.metres()))), nb.patternsStopping()),
+                        (int) Math.max(1, Math.round(Geo.walkMin(nb.metres()))), nb.routeNumbers()),
                 round1(s.millis()));
     }
 

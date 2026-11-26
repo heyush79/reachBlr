@@ -35,6 +35,8 @@ public final class TransitGraph {
     final int[][] patStops;
     final float[][] patCum;         // minutes since the first stop (stored as float, like the prototype's Float32Array)
     final double[][] patFreq;       // pattern -> [buses per minute morning, evening]
+    final String[][] patRouteNumbers; // pattern -> distinct route numbers, e.g. "500-D" for "500-D KBS-ITPL"
+    final int[] stopRouteNumbers;   // stop -> how many distinct route numbers stop there
     final int[][] stopPatterns;     // stop -> pairs (pattern, position), for every position except the last
     final int[][] walkStop;         // stop -> nearby stops within 250 m
     final double[][] walkMetres;
@@ -105,6 +107,7 @@ public final class TransitGraph {
         patStops = new int[np][];
         patCum = new float[np][];
         patFreq = new double[np][];
+        patRouteNumbers = new String[np][];
         for (int pi = 0; pi < np; pi++) {
             Pattern p = d.patterns().get(pi);
             patLabel[pi] = p.label();
@@ -113,7 +116,14 @@ public final class TransitGraph {
             for (int i = 0; i < cum.length; i++) cum[i] = (float) (p.cumTenths()[i] / 10.0);
             patCum[pi] = cum;
             patFreq[pi] = new double[]{p.gapMorning() != 0 ? 1 / p.gapMorning() : 0, p.gapEvening() != 0 ? 1 / p.gapEvening() : 0};
+            patRouteNumbers[pi] = routeNumbers(p.routes());
         }
+        List<Set<String>> numbersAtStop = new ArrayList<>(busStopCount);
+        for (int i = 0; i < busStopCount; i++) numbersAtStop.add(new HashSet<>());
+        for (int pi = 0; pi < np; pi++) {
+            for (int s : patStops[pi]) numbersAtStop.get(s).addAll(Arrays.asList(patRouteNumbers[pi]));
+        }
+        stopRouteNumbers = numbersAtStop.stream().mapToInt(Set::size).toArray();
         IntList[] sp = IntList.array(busStopCount);
         for (int pi = 0; pi < np; pi++) {
             int[] s = patStops[pi];
@@ -193,6 +203,19 @@ public final class TransitGraph {
             wardStops[w.index()] = ids.toArray();
             wardStopMetres[w.index()] = ms.toArray();
         }
+    }
+
+    /**
+     * A route's number is the first word of its name: "KBS-1I BEMLF-KDG" is route KBS-1I. Several route variants
+     * (slightly different stops) share a number, so this is what riders recognise.
+     */
+    static String[] routeNumbers(List<String> routeNames) {
+        Set<String> out = new LinkedHashSet<>();
+        for (String name : routeNames) {
+            String n = name.trim().split("\\s+")[0];
+            if (!n.isEmpty()) out.add(n);
+        }
+        return out.toArray(String[]::new);
     }
 
     /** Half the train gap, in minutes. A missing gap counts as 10 minutes. */
