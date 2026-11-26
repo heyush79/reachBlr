@@ -8,6 +8,7 @@ import { mustText, passesMust, scoreFor, scoreName } from "./lib/places";
 import { nearestNotes } from "./lib/text";
 import { Controls } from "./components/Controls";
 import { Footer } from "./components/Footer";
+import { GoogleNearby } from "./components/GoogleNearby";
 import { Legend } from "./components/Legend";
 import { MapView } from "./components/MapView";
 import { PlacesTable } from "./components/PlacesTable";
@@ -173,6 +174,14 @@ function CommuteMap({ meta, wards }: { meta: Meta; wards: WardsGeoJson }) {
             palette={palette}
           >
             <PlacesTable ward={props[selected]} types={meta.placeTypes} />
+            {meta.googlePlaces && meta.placeTypes.length > 0 && (
+              <GoogleNearby
+                key={selected}
+                centre={props[selected].centre}
+                wardName={props[selected].name}
+                types={meta.placeTypes}
+              />
+            )}
           </WardDetail>
         )}
 

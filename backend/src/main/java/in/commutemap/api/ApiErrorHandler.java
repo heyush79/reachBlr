@@ -1,5 +1,7 @@
 package in.commutemap.api;
 
+import in.commutemap.places.GooglePlacesClient;
+import in.commutemap.places.PlacesRateLimiter;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -54,6 +56,28 @@ public class ApiErrorHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BindException.class)
     ResponseEntity<ProblemDetail> bind(BindException ex) {
         return ResponseEntity.badRequest().body(invalid(errors(ex.getBindingResult())));
+    }
+
+    @ExceptionHandler(PlacesRateLimiter.RateLimitedException.class)
+    ResponseEntity<ProblemDetail> rateLimited(PlacesRateLimiter.RateLimitedException ex) {
+        ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        p.setTitle("Too many requests");
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.retryAfterSeconds())).body(p);
+    }
+
+    @ExceptionHandler(NearbyController.GoogleNotConfiguredException.class)
+    ResponseEntity<ProblemDetail> googleNotConfigured(NearbyController.GoogleNotConfiguredException ex) {
+        ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        p.setTitle("Not available");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(p);
+    }
+
+    @ExceptionHandler(GooglePlacesClient.GoogleUnavailableException.class)
+    ResponseEntity<ProblemDetail> googleUnavailable(GooglePlacesClient.GoogleUnavailableException ex) {
+        ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, ex.getMessage());
+        p.setTitle("Google Places is not answering");
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(p);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

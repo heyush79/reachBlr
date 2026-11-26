@@ -126,6 +126,14 @@ class ApiTest {
     }
 
     @Test
+    void googleNearbyIsOffWithoutAKey() throws Exception {
+        mvc.perform(get("/api/places/nearby?lat=12.97&lon=77.64&type=gym"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.detail").value(containsString("not set up")));
+        mvc.perform(get("/api/meta")).andExpect(jsonPath("$.googlePlaces").value(false));
+    }
+
+    @Test
     void browsersFromTheFrontendMayCall() throws Exception {
         mvc.perform(get("/api/meta").header("Origin", "http://localhost:5173"))
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));

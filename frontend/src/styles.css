@@ -130,3 +130,17 @@ footer a { color: var(--ink); }
   display: inline-block; min-width: 44px; text-align: center; padding: 1px 8px; border-radius: 999px;
   background: var(--b1); color: var(--bg); font-weight: 700; font-size: 13px;
 }
+
+/* Nearby on Google: a list in its own box, with Google's attribution inside the same box */
+.gnearby { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 4px; }
+.gnote { font-size: 14px; margin-top: 10px; }
+.gbox { margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 4px 10px 8px; }
+.glist { list-style: none; padding: 0; margin: 0; }
+.glist li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.glist li::before { display: none; }
+.gname small { display: block; color: var(--soft); font-size: 12px; }
+.gside { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; white-space: nowrap; font-size: 13px; }
+.gside a, .gname a { color: var(--ink); }
+.gattr { margin: 8px 0 0; font-size: 12px; color: var(--soft); }
+/* Google's rules for the text attribution: Roboto, regular weight, #5E5E5E (or white on dark), never wrapped */
+.google-maps { font-family: Roboto, Arial, sans-serif; font-weight: 400; font-size: 13px; color: light-dark(#5e5e5e, #ffffff); white-space: nowrap; }

@@ -1,4 +1,4 @@
-import type { Meta, ReachResponse, TripResponse, WardsGeoJson } from "./types";
+import type { Meta, NearbyResponse, ReachResponse, TripResponse, WardsGeoJson } from "./types";
 
 /** Base URL of the backend. Empty = same site (Vite's dev proxy, or nginx in Docker). */
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
@@ -33,4 +33,6 @@ export const api = {
   reach: (params: string, signal?: AbortSignal) => getJson<ReachResponse>(`/api/reach?${params}`, signal),
   trip: (params: string, ward: number, signal?: AbortSignal) =>
     getJson<TripResponse>(`/api/trip?${params}&ward=${ward}`, signal),
+  nearby: (lat: number, lon: number, type: string, signal?: AbortSignal) =>
+    getJson<NearbyResponse>(`/api/places/nearby?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}&type=${encodeURIComponent(type)}`, signal),
 };

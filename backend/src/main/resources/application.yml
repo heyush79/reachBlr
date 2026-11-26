@@ -30,6 +30,14 @@ commute:
   data-dir: ${COMMUTE_DATA_DIR:../data}
   allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
   search-cache-size: 32
+  google:
+    # From the environment only; never commit a key. Empty = the "Nearby on Google" feature is off.
+    api-key: ${GOOGLE_PLACES_API_KEY:}
+    base-url: https://places.googleapis.com
+    per-ip-per-minute: ${PLACES_PER_IP_PER_MINUTE:10}
+    global-per-day: ${PLACES_GLOBAL_PER_DAY:500}
+    max-results: 10
+    radius-metres: 1000
   # true = also find trips that leave from a stop you could have walked to (see Router); false = same as the prototype
   ride-fix: ${RIDE_FIX:false}
   # Preset offices (approximate locations), same as the prototype

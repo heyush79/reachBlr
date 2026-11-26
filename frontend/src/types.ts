@@ -41,6 +41,8 @@ export interface Meta {
   placesAsOf: string | null;
   feeds: Record<string, string | null>;
   rideFix: boolean;
+  /** true when the server has a Google Places key, so "Nearby on Google" can be offered */
+  googlePlaces: boolean;
 }
 
 export interface WardProps {
@@ -117,4 +119,23 @@ export interface TripResponse {
   ward: number;
   wardName: string;
   trip: Trip | null;
+}
+
+export interface NearbyPlace {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lon: number;
+  distanceMetres: number;
+  googleMapsUri: string;
+  /** data providers Google says must be shown with this result */
+  attributions: { provider: string; providerUri: string }[];
+}
+
+export interface NearbyResponse {
+  type: string;
+  radiusMetres: number;
+  places: NearbyPlace[];
+  attribution: string;
 }

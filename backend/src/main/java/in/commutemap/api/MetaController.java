@@ -3,6 +3,7 @@ package in.commutemap.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.commutemap.config.CommuteProperties;
+import in.commutemap.config.GoogleProperties;
 import in.commutemap.data.TransitData;
 import in.commutemap.data.TransitData.Ward;
 import in.commutemap.places.PlaceScores;
@@ -30,9 +31,9 @@ public class MetaController {
     private final Cached meta;
     private final Cached wards;
 
-    public MetaController(TransitData data, CommuteProperties props, PlaceScores scores, ObjectMapper json)
-            throws JsonProcessingException {
-        this.meta = new Cached(json.writeValueAsBytes(meta(data, props)));
+    public MetaController(TransitData data, CommuteProperties props, PlaceScores scores, GoogleProperties google,
+                          ObjectMapper json) throws JsonProcessingException {
+        this.meta = new Cached(json.writeValueAsBytes(meta(data, props, google.configured())));
         this.wards = new Cached(json.writeValueAsBytes(wardsGeoJson(data, scores)));
     }
 
@@ -52,7 +53,7 @@ public class MetaController {
         return wards.respond(etag, GEO_JSON);
     }
 
-    private static Map<String, Object> meta(TransitData d, CommuteProperties props) {
+    private static Map<String, Object> meta(TransitData d, CommuteProperties props, boolean googlePlaces) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("offices", props.offices());
         List<Map<String, Object>> lines = new ArrayList<>();
@@ -73,6 +74,7 @@ public class MetaController {
         m.put("feeds", feeds);
         m.put("limits", Map.of("limit", List.of(15, 90), "leg", List.of(5, 30)));
         m.put("rideFix", props.rideFix());
+        m.put("googlePlaces", googlePlaces);
         return m;
     }
 
